@@ -32,3 +32,18 @@ img {
     border-radius: 15px;
 
 }
+.logo{
+    width: 68px;
+    height: 68px;
+    background-color: antiquewhite;
+    border-radius: 15px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.logo img {
+    width: 70px;
+    height: 70px;
+    objet-fit: contain;
+}
