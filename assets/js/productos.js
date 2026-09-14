@@ -7,59 +7,47 @@ document.getElementById("plantilla-producto");
 //frutas    
     const productos = [
         {
-        nombre: "Manzana",
+        nombre: "Manzanas Fuji",
         imagen: "assets/img/manzana.jpg",
         descripcion: "Manzanas rojas de campo",
-        precio: "10k"
+        precio: " $1,200 CLP / kilo - Stock: 150 kilos"
     },
     {
-        nombre: "Naranja",
+        nombre: "Naranjas Valencia",
         imagen:"assets/img/naranja.jpg",
         descripcion: "Naranjas dulces, mas dulces que la miel",
-        precio: "15k"
+        precio: " $1,000 CLP / kilo - Stock: 200 kilos"
     },
     {
-        nombre: "Platano verde",
+        nombre: "Plátanos Cavendish",
         imagen:"assets/img/platano.jpg",
-        descripcion: "Platanos verdes de 45cm",
-        precio: "90k"
+        descripcion: "Plátanos maduros y dulces, perfectos para el desayuno o como snack energético. ",
+        precio: "$800 CLP / kilo - Stock: 250 kilos",
     },
 //verduras
     {
-        nombre: "Zanahoria",
+        nombre: "Zanahorias",
         imagen:"assets/img/zanahoria.jpg",
-        descripcion: "Organicas y veganas 100%RealnoFake",
-        precio: "1k"
+        descripcion: "Zanahorias crujientes cultivadas sin pesticidas en la Región de O'Higgins",
+        precio: "$900 CLP / kilo Stock: 100 kilos"
     },
     {
-        nombre: "Espinaca",
+        nombre: "Espinacas Frescas",
         imagen:"assets/img/espinaca.jpg",
         descripcion: "Hojas comestibles con mucho hierro",
-        precio: "8k"
+        precio: " $700 CLP / bolsa de 500g - Stock: 80 bolsas"
     },
     {
         nombre: "Pimenton",
         imagen:"assets/img/pimiento.jpg",
-        descripcion: "Naturales y crugientes, a los ninos nunca les gusta",
-        precio: "12k"
-    },
-    {
-        nombre: "Quinua",
-        imagen:"assets/img/quinua.jpg",
-        descripcion: "Semillas que se expanden en tu boca, se sienten muy raro pero son nutritivas",
-        precio: "25k"
+        descripcion: "Pimientos rojos, amarillos y verdes, ideales para salteados y platos coloridos.",
+        precio: "$1,500 CLP / kilo - stock: 120 kilos"
     },
     {
         nombre: "Miel",
         imagen:"assets/img/miel.jpg",
-        descripcion: "Nunca se descompone, es dorada y saludable",
-        precio: "100k"
-    },
-    {
-        nombre: "Leche",
-        imagen: "assets/img/leche.jpg",
-        descripcion: "Leche de toro contento",
-        precio: "40k"
+        descripcion: "Miel pura y orgánica producida por apicultores locales.",
+        precio: " $5,000 CLP / frasco de 500g - Stock: 50 frascos"
     }
 ]
     
