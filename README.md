@@ -7,8 +7,8 @@ Repositorio de integración del proyecto académico de tienda y entregas galáct
 | Ruta | Contenido | Estado |
 |---|---|---|
 | `backend/catalogo/` | Spring Boot: consulta de productos, JPA, Swagger, tests | Implementado y comprobado por CI |
-| `backend/usuarios/` | Código fuente del microservicio Usuarios del equipo | Importado desde ZIP del equipo; 6 tests aprobados en CI |
-| `index.html`, `*.html`, `assets/` | Tienda HTML original | **Legado, sin modificar** |
+| `backend/usuarios/` | Usuarios, registro y JWT | 11 tests aprobados en CI |
+| `frontend/tienda/` | Tienda React/Vite conectada a Catálogo y Usuarios | En PR #3, pendiente verificar frontend CI |\n| `index.html`, `*.html`, `assets/` | Tienda HTML original | **Legado, sin modificar** |
 | `Huerto_React.zip` | Entrega React que sigue empaquetada | **Pendiente extraer/auditar** |
 | `Huerto_Hogar_3-main.zip` | Entrega histórica empaquetada | No asumida como código vigente |
 | `compose.yaml` | MySQL local para ambos servicios | Configurado para desarrollo |
@@ -51,7 +51,7 @@ CI de GitHub Actions ejecuta ambos módulos sólo en PR que cambian backend o el
 
 - Verificado: catálogo Java compilado, 2 tests HTTP sin errores (CI de PR #1).
 - Verificado: código fuente de Usuarios importado desde `HuertoHogar-Usuarios.zip` del 10/11/2026; 6 tests aprobados en CI.
-- Verificado en PR #2: login JWT, protección de perfiles y CORS; 11 tests Usuarios + 2 tests Catálogo. Pendiente: rate limiting, CRUD administrativo, órdenes, stock sincronizado, frontend React y despliegue.
+- Verificado en PR #2: login JWT, protección de perfiles y CORS; 11 tests Usuarios + 2 tests Catálogo.\n- En PR de frontend: React/Vite, catálogo consultado al backend y registro/login reales; checkout y stock sincronizado aún pendientes.\n- Pendiente: rate limiting, CRUD administrativo, pedidos, stock sincronizado, E2E, React visual y despliegue.
 - La publicación en Cloud Run/Firebase/Cloud SQL requiere revisar presupuesto y vincular el proyecto Google Cloud explícitamente. **No se ha creado infraestructura facturable.**
 
 Más contexto: [integración local](docs/INTEGRACION_LOCAL.md), [contratos](docs/CONTRATOS_API.md), [decisiones](docs/DECISIONES.md).
