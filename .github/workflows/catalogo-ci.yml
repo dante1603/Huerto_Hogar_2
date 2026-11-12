@@ -1,0 +1,35 @@
+name: Fullstack backend CI
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/catalogo-ci.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: fullstack-backend-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Preparar JDK 21 y cache Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: |
+            backend/catalogo/pom.xml
+            backend/usuarios/pom.xml
+      - name: Test catálogo
+        run: mvn -B -ntp -f backend/catalogo/pom.xml test
+      - name: Test Usuarios
+        run: mvn -B -ntp -f backend/usuarios/pom.xml test
