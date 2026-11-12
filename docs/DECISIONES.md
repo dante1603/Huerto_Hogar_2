@@ -4,7 +4,7 @@
 
 - Repositorio de integración: `dante1603/Huerto_Hogar_2`.
 - Código de Galaxym permanece en `dante1603/Galaxym_solar_system`; no copiar el simulador ni tocar su rama principal.
-- Catálogo y Usuarios: dos Spring Boot independientes dentro de `backend/`, cada cual con su `pom.xml`.
+- Catálogo y Usuarios: dos Spring Boot independientes dentro de `backend/`, cada cual con su `pom.xml`; 2 + 6 tests aprobados en CI del 12/11/2026.
 - Contratos REST versionados `/api/v1`; OpenAPI/Swagger.
 - MySQL local compartido como **servidor**, con esquemas independientes `huertohogar_catalogo` y `huertohogar_usuarios`; JPA para pruebas de persistencia.
 - Cambios por PR y CI filtrada; no desplegar ni generar infraestructura facturable sin verificar acceso y costos.

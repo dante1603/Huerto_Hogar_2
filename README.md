@@ -45,12 +45,12 @@ mvn -B -ntp -f backend/catalogo/pom.xml test
 mvn -B -ntp -f backend/usuarios/pom.xml test
 ```
 
-CI de GitHub Actions ejecuta ambos módulos sólo en PR que cambian backend/infra o bajo ejecución manual. Concurrency cancela corridas anteriores del mismo PR. No ejecuta builds en cada push a main ni despliega a la nube.
+CI de GitHub Actions ejecuta ambos módulos sólo en PR que cambian backend o el workflow, o bajo ejecución manual. Concurrency cancela corridas anteriores del mismo PR. No ejecuta builds en cada push a main ni despliega a la nube.
 
 ## Estado de entrega
 
 - Verificado: catálogo Java compilado, 2 tests HTTP sin errores (CI de PR #1).
-- En integración: código fuente Usuarios del equipo desde `HuertoHogar-Usuarios.zip` del 10/11/2026.
+- Verificado: código fuente de Usuarios importado desde `HuertoHogar-Usuarios.zip` del 10/11/2026; 6 tests aprobados en CI.
 - Pendiente: login JWT, CRUD administrativo, órdenes, stock sincronizado, frontend React y despliegue.
 - La publicación en Cloud Run/Firebase/Cloud SQL requiere revisar presupuesto y vincular el proyecto Google Cloud explícitamente. **No se ha creado infraestructura facturable.**
 

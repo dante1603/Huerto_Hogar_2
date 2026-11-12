@@ -42,4 +42,4 @@ Los dos servicios son procesos Spring Boot independientes. La base MySQL es un �
 
 Archivo recibido en carpeta de equipo: `HuertoHogar-Usuarios.zip` (10/11/2026), SHA256 `0ff69a6c7155dfccda79ef14208a604c8be694dab06fdeaf1b9e8fbc300bdd04`.
 
-El importador temporal de CI copia exclusivamente los archivos de desarrollo (excluye `target/` y cualquier `.env`), con historial de commit auditable. Mantiene el contenido original y no lo confunde con una versión ya auditada o desplegada.
+La importación de Usuarios se ejecutó una sola vez, verificando el SHA-256 y copiando únicamente código fuente, tests y documentación (sin `target/` ni `.env`). El ZIP de transporte fue retirado del árbol después de crear el commit. CI verificó 6 pruebas de Usuarios sin fallos, pero **no** comprueba MySQL real ni despliegue público.
