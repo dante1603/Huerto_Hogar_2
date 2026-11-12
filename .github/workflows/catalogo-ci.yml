@@ -1,0 +1,30 @@
+name: Catalogo API CI
+
+on:
+  pull_request:
+    paths:
+      - 'backend/catalogo/**'
+      - '.github/workflows/catalogo-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/catalogo/**'
+      - '.github/workflows/catalogo-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/catalogo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/catalogo/pom.xml
+      - name: Tests JUnit y MockMvc
+        run: mvn -B -ntp test
