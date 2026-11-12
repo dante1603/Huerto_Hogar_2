@@ -26,3 +26,11 @@ Este repositorio es el workspace principal de integración **Fullstack II**. Sus
 
 ## Criterio de finalización
 Entregar commit/PR, diff revisable, tests concretos y límites claros (CI vs QA humano/MySQL/Cloud Run/visual). Actualizar la documentación del propietario ante decisiones duraderas. No confundir una tarea preparada con implementación comprobada.
+
+## Pedidos y reserva SQL
+- Módulo Pedidos dentro de Catálogo para que descuento de stock y pedido se confirmen en UNA transacción. No dividir en un tercer servicio sin implementar consistencia distribuida.
+- `POST /api/v1/pedidos` exige JWT CLIENTE y `Idempotency-Key` UUID por intento (máx. una reserva por cliente/clave). Clave igual + payload diferente = 409.
+- Los clientes solo pueden leer sus propios pedidos; vendedores y administradores leen pedidos pendientes, sin mutaciones de estado por ahora.
+- Bloqueos pesimistas ordenados evitan sobreventa bajo base SQL; los reintentos nunca descuentan inventario dos veces.
+- No cobrar ni simular un pedido como entregado. GalatiCoins son moneda ficticia.
+- Backends Catálogo/Usuarios requieren misma clave JWT por desarrollo; no incluir secretos en Vite ni en código versionado.

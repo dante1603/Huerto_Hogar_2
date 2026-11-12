@@ -48,6 +48,13 @@ public class Producto {
         this.planetaOrigen = planetaOrigen;
     }
 
+    public void reservar(int cantidad) {
+        if (cantidad <= 0 || stock < cantidad) {
+            throw new IllegalArgumentException("Reserva invalida");
+        }
+        this.stock -= cantidad;
+    }
+
     public Long getId() { return id; }
     public String getSku() { return sku; }
     public String getNombre() { return nombre; }

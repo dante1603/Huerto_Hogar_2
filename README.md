@@ -55,3 +55,11 @@ CI de GitHub Actions ejecuta ambos módulos sólo en PR que cambian backend o el
 - La publicación en Cloud Run/Firebase/Cloud SQL requiere revisar presupuesto y vincular el proyecto Google Cloud explícitamente. **No se ha creado infraestructura facturable.**
 
 Más contexto: [integración local](docs/INTEGRACION_LOCAL.md), [contratos](docs/CONTRATOS_API.md), [decisiones](docs/DECISIONES.md).
+
+## Pedidos y reserva — MVP
+
+En `backend/catalogo/` se incorpora `/api/v1/pedidos` (crear con JWT + UUID de idempotencia y reservar inventario SQL), junto con lectura de pedidos propios o pendientes. La tienda React ofrece confirmación de reserva, destino y comprobante, sin simular pagos o entregas.
+
+**Para iniciar ambos backends**, exportar el mismo `JWT_SECRET_BASE64` de 32+ bytes en cada proceso. El secreto NO va al frontend. Ver `backend/catalogo/README.md` y `frontend/tienda/README.md`.
+
+No hay conexión con Firebase/Cloud Run ni stock del cofre del juego. Las reservas H2 de demo se pierden al reiniciar. La siguiente fase conecta Galaxym a una cola de pedidos autenticada y luego una BD relacional persistente.

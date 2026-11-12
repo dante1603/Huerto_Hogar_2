@@ -40,7 +40,7 @@ export default function Acceso({ session, onAuthenticated, onLogout }) {
       {session ? <>
         <h1>Sesión iniciada</h1>
         <p>Usuario #{session.idUsuario} · {session.rolUsuario}</p>
-        <p className="small">El token permanece en esta pestaña mientras la sesión esté vigente. Las operaciones de compra aún no están disponibles.</p>
+        <p className="small">El token permanece en esta pestaña mientras la sesión esté vigente. Ya puedes reservar productos mediante pedidos; el repartidor todavía no recibe misiones en Galaxym.</p>
         <button type="button" className="button button-primary" onClick={onLogout}>Cerrar sesión</button>
       </> : <>
         <h1>{mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}</h1>

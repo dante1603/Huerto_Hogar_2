@@ -1,7 +1,7 @@
 import { useState } from 'react'
+import { formatGalatiCoins } from '../lib/money.js'
 
 const icons = { Bruma: '🌿', 'Árido': '🌵', Arido: '🌵', Yermo: '💎' }
-const asCLP = (n) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n)
 
 export default function ProductCard({ product, add }) {
   const [expanded, setExpanded] = useState(false)
@@ -14,7 +14,7 @@ export default function ProductCard({ product, add }) {
       <div className="product-body">
         <div className="product-eyebrow">{product.planetaOrigen || 'Sistema Galaxym'}</div>
         <h3>{product.nombre}</h3>
-        <div className="product-price">{asCLP(Number(product.precio))}</div>
+        <div className="product-price">{formatGalatiCoins(Number(product.precio))}</div>
         <div className="stock">{product.stock > 0 ? `En inventario: ${product.stock}` : 'Agotado'}</div>
         {expanded && <p className="product-desc">{product.descripcion}</p>}
         <div className="product-actions">
