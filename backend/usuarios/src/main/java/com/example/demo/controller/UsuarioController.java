@@ -7,6 +7,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,7 +40,12 @@ public class UsuarioController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Consultar datos publicos de un usuario por ID")
-    public UsuarioRespuesta obtener(@PathVariable Long id) {
+    public UsuarioRespuesta obtener(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        boolean esPropietario = jwt != null && id.toString().equals(jwt.getSubject());
+        boolean esAdministrador = jwt != null && "ADMINISTRADOR".equals(jwt.getClaimAsString("rol"));
+        if (!esPropietario && !esAdministrador) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acceso denegado");
+        }
         return service.buscarPorId(id);
     }
 }

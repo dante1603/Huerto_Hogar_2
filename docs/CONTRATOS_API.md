@@ -6,9 +6,9 @@ Todos los servicios usan JSON y prefijo `/api/v1`. Esta tabla distingue expresam
 |---|---|---|---|
 | `/api/v1/productos` | GET | catálogo | Implementado; lectura JPA |
 | `/api/v1/productos/{id}` | GET | catálogo | Implementado; 404 si no existe |
-| `/api/v1/usuarios` | POST | usuarios | En código de equipo; registro de cliente, no JWT |
-| `/api/v1/usuarios/{id}` | GET | usuarios | En código de equipo; vista pública mínima |
-| `/api/v1/auth/login` | POST | usuarios | Pendiente |
+| `/api/v1/usuarios` | POST | usuarios | Registro público CLIENTE; sin asignación de rol privilegiado |
+| `/api/v1/usuarios/{id}` | GET | usuarios | Implementado: Bearer JWT, solo propietario o ADMINISTRADOR |
+| `/api/v1/auth/login` | POST | usuarios | Implementado: valida BCrypt y emite JWT HS256 de 30 minutos |
 | `/api/v1/pedidos` | POST/GET | pedidos | Pendiente |
 | `/api/v1/entregas/{id}/telemetria` | POST/GET | entregas | Pendiente |
 
