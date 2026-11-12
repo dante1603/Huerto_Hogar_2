@@ -1,0 +1,57 @@
+# HuertoHogar × Galaxym — Fullstack II
+
+Repositorio de integración del proyecto académico de tienda y entregas galácticas.
+
+## Estructura real del repositorio
+
+| Ruta | Contenido | Estado |
+|---|---|---|
+| `backend/catalogo/` | Spring Boot: consulta de productos, JPA, Swagger, tests | Implementado y comprobado por CI |
+| `backend/usuarios/` | Código fuente del microservicio Usuarios del equipo | Integrado desde ZIP compartido; pendiente validar CI |
+| `index.html`, `*.html`, `assets/` | Tienda HTML original | **Legado, sin modificar** |
+| `Huerto_React.zip` | Entrega React que sigue empaquetada | **Pendiente extraer/auditar** |
+| `Huerto_Hogar_3-main.zip` | Entrega histórica empaquetada | No asumida como código vigente |
+| `compose.yaml` | MySQL local para ambos servicios | Configurado para desarrollo |
+| `docs/` | Decisiones, integración y contratos | Documentación actual |
+
+**Regla de integración:** no reemplazar proyectos del equipo ni borrar los ZIP originales hasta haber validado su contenido y el trabajo vigente. No hay cambios en `Galaxym_solar_system` todavía.
+
+## Ejecutar los microservicios sin MySQL (modo demostración)
+
+Se requiere JDK 21 y Maven (o el wrapper Maven de Usuarios).
+
+Terminal 1:
+
+```bash
+mvn -f backend/catalogo/pom.xml spring-boot:run -Dspring-boot.run.profiles=demo
+```
+
+Terminal 2:
+
+```bash
+SERVER_PORT=8081 mvn -f backend/usuarios/pom.xml spring-boot:run -Dspring-boot.run.profiles=demo
+```
+
+- Catálogo: http://localhost:8080/api/v1/productos
+- Usuarios: http://localhost:8081/swagger-ui.html
+- Catálogo Swagger: http://localhost:8080/swagger-ui.html
+
+**Modo demo usa H2 en memoria, no guarda datos tras reiniciar.** Para persistencia local seguir `docs/INTEGRACION_LOCAL.md`.
+
+## Tests
+
+```bash
+mvn -B -ntp -f backend/catalogo/pom.xml test
+mvn -B -ntp -f backend/usuarios/pom.xml test
+```
+
+CI de GitHub Actions ejecuta ambos módulos sólo en PR que cambian backend/infra o bajo ejecución manual. Concurrency cancela corridas anteriores del mismo PR. No ejecuta builds en cada push a main ni despliega a la nube.
+
+## Estado de entrega
+
+- Verificado: catálogo Java compilado, 2 tests HTTP sin errores (CI de PR #1).
+- En integración: código fuente Usuarios del equipo desde `HuertoHogar-Usuarios.zip` del 10/11/2026.
+- Pendiente: login JWT, CRUD administrativo, órdenes, stock sincronizado, frontend React y despliegue.
+- La publicación en Cloud Run/Firebase/Cloud SQL requiere revisar presupuesto y vincular el proyecto Google Cloud explícitamente. **No se ha creado infraestructura facturable.**
+
+Más contexto: [integración local](docs/INTEGRACION_LOCAL.md), [contratos](docs/CONTRATOS_API.md), [decisiones](docs/DECISIONES.md).
