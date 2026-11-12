@@ -4,44 +4,22 @@ on:
   pull_request:
     paths:
       - "backend/**"
-      - "imports/**"
-      - "infra/**"
-      - "compose.yaml"
       - ".github/workflows/catalogo-ci.yml"
   workflow_dispatch:
 
-# Solo uno por PR. Importacion one-shot desde un ZIP del equipo.
 concurrency:
   group: fullstack-backend-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   test:
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout de rama
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
-
-      - name: Integrar fuente Usuarios del equipo (una sola vez)
-        shell: bash
-        run: |
-          if [ -f imports/HuertoHogar-Usuarios.zip ] && [ ! -f backend/usuarios/pom.xml ]; then
-            echo "0ff69a6c7155dfccda79ef14208a604c8be694dab06fdeaf1b9e8fbc300bdd04  imports/HuertoHogar-Usuarios.zip" | sha256sum -c -
-            mkdir -p /tmp/huerto-extract backend/usuarios
-            unzip -q imports/HuertoHogar-Usuarios.zip -d /tmp/huerto-extract
-            rsync -a --exclude='target/' --exclude='.env' --exclude='.git/' /tmp/huerto-extract/huertohogar-usuarios/ backend/usuarios/
-            git rm imports/HuertoHogar-Usuarios.zip
-            git add backend/usuarios
-            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "chore: importar microservicio Usuarios desde ZIP verificado"
-            git push origin HEAD:${{ github.head_ref || github.ref_name }}
-          fi
-
       - name: Preparar JDK 21 y cache Maven
         uses: actions/setup-java@v4
         with:
@@ -51,9 +29,7 @@ jobs:
           cache-dependency-path: |
             backend/catalogo/pom.xml
             backend/usuarios/pom.xml
-
       - name: Test catálogo
         run: mvn -B -ntp -f backend/catalogo/pom.xml test
-
       - name: Test Usuarios
         run: mvn -B -ntp -f backend/usuarios/pom.xml test

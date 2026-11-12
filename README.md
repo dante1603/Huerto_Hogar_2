@@ -7,7 +7,7 @@ Repositorio de integración del proyecto académico de tienda y entregas galáct
 | Ruta | Contenido | Estado |
 |---|---|---|
 | `backend/catalogo/` | Spring Boot: consulta de productos, JPA, Swagger, tests | Implementado y comprobado por CI |
-| `backend/usuarios/` | Código fuente del microservicio Usuarios del equipo | Integrado desde ZIP compartido; pendiente validar CI |
+| `backend/usuarios/` | Código fuente del microservicio Usuarios del equipo | Importado desde ZIP del equipo; 6 tests aprobados en CI |
 | `index.html`, `*.html`, `assets/` | Tienda HTML original | **Legado, sin modificar** |
 | `Huerto_React.zip` | Entrega React que sigue empaquetada | **Pendiente extraer/auditar** |
 | `Huerto_Hogar_3-main.zip` | Entrega histórica empaquetada | No asumida como código vigente |
