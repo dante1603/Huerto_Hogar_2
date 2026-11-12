@@ -22,3 +22,11 @@
 ## Calidad
 
 No confundir resultados de MockMvc/H2 con pruebas de conectividad MySQL, Cloud Run ni flujos end-to-end. Fuente de verdad de compilación: GitHub Actions del commit concreto. Registrar los límites antes de fusionar.
+
+## Seguridad JWT — 12/11/2026
+
+- Usuarios emite JWT HS256 con firma controlada por `JWT_SECRET_BASE64` (mínimo 32 bytes), sin secreto versionado.
+- Vencimiento inicial: 30 minutos; rol en claim `rol`, sujeto `sub` numérico de usuario; validación de emisor y expiración.
+- Registro público genera únicamente CLIENTE. Lectura de perfiles permite únicamente propietario o ADMINISTRADOR.
+- CORS se configura mediante lista explícita `APP_ALLOWED_ORIGINS`; sin orígenes abiertos por defecto.
+- Cobertura en GitHub Actions: Usuarios 11/11 y catálogo 2/2. Pendientes: limitar intentos de login, control de cuentas, revocación, política de sesiones frontend, seguridad del resto de servicios y revisión antes de exponer datos reales.

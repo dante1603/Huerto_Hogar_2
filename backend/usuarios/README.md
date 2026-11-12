@@ -8,7 +8,7 @@ Se reemplazó el ejemplo de **Vehículos** por el dominio **Usuario**, mantenien
 - Spring Boot y Java **17+**, con Maven Wrapper (se conserva **Spring Boot 4.1.1** y **springdoc 3.1.0** de la plantilla original).
 - Entidad `usuario` y campos de la pizarra: `id_usuario`, `nombre_usuario`, `rut_usuario`, `direccion_usuario`, `email_usuario`, `contrasena_usuario` (hash BCrypt), `fecha_hora_creacion_usuario`, `rol_usuario`.
 - `POST /api/v1/usuarios` para registrar un usuario con rol `CLIENTE` y responder `201`.
-- `GET /api/v1/usuarios/{id}` para leer un perfil público mínimo y responder `200` o `404`.
+- `GET /api/v1/usuarios/{id}` requiere JWT Bearer válido y permite al propietario o ADMINISTRADOR leer el perfil mínimo; 200/401/403/404.
 - Validación de campos, dígito verificador del RUT, correo único, RUT único; respuestas `400`, `404` y `409` según corresponda.
 - Swagger UI: http://localhost:8080/swagger-ui.html y OpenAPI JSON: http://localhost:8080/v3/api-docs
 - MySQL como base real; perfil `demo` con H2 en memoria, **solo** para comprobar el flujo en clases sin MySQL.
@@ -27,6 +27,8 @@ Se reemplazó el ejemplo de **Vehículos** por el dominio **Usuario**, mantenien
 ```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
 ```
+
+Antes de iniciar, generar una clave JWT local y exportarla: en Linux/macOS `export JWT_SECRET_BASE64="$(openssl rand -base64 32)"`; en PowerShell `$env:JWT_SECRET_BASE64 = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))`. Nunca usar la clave de test ni subir secretos al repositorio.
 
 Con el perfil `demo`, H2 mantiene los datos **solo mientras la app está encendida**. El contenido se pierde al reiniciar. Es una demostración de endpoints, **no sustituye la integración MySQL exigida en la evaluación final**.
 
@@ -75,7 +77,7 @@ Respuesta esperada `201 Created`, encabezado `Location: /api/v1/usuarios/1` (el 
 }
 ```
 
-**2) GET** `http://localhost:8080/api/v1/usuarios/1`, reemplazando el número por el ID devuelto. Respuesta `200 OK` y el mismo JSON. La respuesta **no contiene** RUT, dirección, correo ni contraseña.
+**2) Login:** `POST /api/v1/auth/login` con `email` y `contrasena`. La API devuelve `accessToken` JWT (Bearer) válido durante 1800 s. **3) GET** `http://localhost:8080/api/v1/usuarios/1` requiere `Authorization: Bearer <token>` y solo autoriza propietario o ADMINISTRADOR. La respuesta **no contiene** RUT, dirección, correo ni contraseña.
 
 **3) Errores:** repetir mismo RUT/correo → `409`; RUT inválido o datos incompletos → `400`; ID inexistente → `404`.
 
@@ -100,12 +102,12 @@ Petición HTTP
 
 ## Qué NO incluye y qué falta para la evaluación
 
-- **No hay JWT, login, sesiones, roles administrados ni Spring Security HTTP**. Solo se usa el componente `spring-security-crypto` para calcular hashes BCrypt. **No usar con datos reales o exposición pública** sin incorporar autenticación, autorización, rate limiting y seguridad de despliegue.
-- `GET` es **público y solo muestra cuatro campos mínimos**. Debe protegerse como parte de la etapa de seguridad de la evaluación.
+- **Sí incluye JWT, login BCrypt y protección de perfiles** con Spring Security. Todavía faltan rate limiting, recuperación de credenciales, revocación de tokens, controles de cuenta y una revisión antes de exposición pública con datos reales.
+- `GET /api/v1/usuarios/{id}` está protegido por JWT y por propiedad del perfil; un CLIENTE no puede leer el perfil de otro.
 - Faltan `PUT`, `DELETE`, consultas administrativas, integración React y pruebas de integración E2E.
 - La pauta pide CRUD completo, Swagger, persistencia, JWT y frontend integrado **para la evaluación final**, no para el avance inicial de un endpoint descrito en clase.
 - El modelo de la pizarra define `rol_usuario`, pero las reglas de autorización y asignación de otros roles quedan para la siguiente etapa. **El registro público nunca acepta el rol ADMINISTRADOR ni VENDEDOR**.
 
 ## Estado de verificación
 
-El proyecto fue generado a partir del ZIP de ejemplo y revisado estructuralmente. **La ejecución de Maven/JUnit y la conexión a MySQL deben verificarse en un equipo con acceso a las dependencias Maven y a MySQL/Docker**. Consultar `VERIFICACION.md`.
+El proyecto fue generado a partir del ZIP de ejemplo y revisado estructuralmente. **GitHub Actions verificó compilación y 11 pruebas JUnit/MockMvc sin errores (12/11/2026). La conexión a MySQL real sigue pendiente de comprobarse**. Consultar `VERIFICACION.md`.

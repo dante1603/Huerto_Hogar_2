@@ -29,7 +29,7 @@ mvn -f backend/catalogo/pom.xml spring-boot:run -Dspring-boot.run.profiles=demo
 Terminal 2:
 
 ```bash
-SERVER_PORT=8081 mvn -f backend/usuarios/pom.xml spring-boot:run -Dspring-boot.run.profiles=demo
+JWT_SECRET_BASE64="$(openssl rand -base64 32)" SERVER_PORT=8081 mvn -f backend/usuarios/pom.xml spring-boot:run -Dspring-boot.run.profiles=demo
 ```
 
 - Catálogo: http://localhost:8080/api/v1/productos
@@ -51,7 +51,7 @@ CI de GitHub Actions ejecuta ambos módulos sólo en PR que cambian backend o el
 
 - Verificado: catálogo Java compilado, 2 tests HTTP sin errores (CI de PR #1).
 - Verificado: código fuente de Usuarios importado desde `HuertoHogar-Usuarios.zip` del 10/11/2026; 6 tests aprobados en CI.
-- En rama `feature/usuarios-login-jwt`: autenticación JWT y perfil protegido. Pendiente: CRUD administrativo, órdenes, stock sincronizado, frontend React y despliegue.
+- Verificado en PR #2: login JWT, protección de perfiles y CORS; 11 tests Usuarios + 2 tests Catálogo. Pendiente: rate limiting, CRUD administrativo, órdenes, stock sincronizado, frontend React y despliegue.
 - La publicación en Cloud Run/Firebase/Cloud SQL requiere revisar presupuesto y vincular el proyecto Google Cloud explícitamente. **No se ha creado infraestructura facturable.**
 
 Más contexto: [integración local](docs/INTEGRACION_LOCAL.md), [contratos](docs/CONTRATOS_API.md), [decisiones](docs/DECISIONES.md).
