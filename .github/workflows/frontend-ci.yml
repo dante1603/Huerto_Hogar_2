@@ -1,0 +1,33 @@
+name: React storefront CI
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/tienda/**'
+      - '.github/workflows/frontend-ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: react-storefront-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/tienda
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install frontend dependencies
+        run: npm install --no-audit --no-fund
+      - name: Unit tests for cart behavior
+        run: npm test
+      - name: Production build
+        run: npm run build
