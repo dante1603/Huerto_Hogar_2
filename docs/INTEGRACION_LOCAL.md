@@ -34,7 +34,7 @@ Los dos servicios son procesos Spring Boot independientes. La base MySQL es un �
 
 - Nunca exponer MySQL directamente a Internet; el puerto está vinculado a 127.0.0.1 en desarrollo.
 - No subir contraseñas reales, claves Firebase, JSON de cuentas de servicio ni archivos `.env`.
-- JWT **aún no está implementado** en el módulo Usuarios: no desplegar registro público de usuarios con datos reales ni inventar seguridad.
+- JWT de Usuarios está en implementación. Para ejecutar ese servicio se exige `JWT_SECRET_BASE64` (32+ bytes aleatorios codificados como Base64); generarlo de forma local con `openssl rand -base64 32`, exportarlo como variable y no subirlo a GitHub. Aún faltan rate limiting y revisión de seguridad para exponerlo públicamente.
 - El código de Boletas sigue en Drive; hay que auditar el ZIP antes de incorporar una copia de código a este repositorio.
 - Los servicios de escritura, pagos, entregas y stock **no están habilitados** en este incremento.
 

@@ -51,7 +51,7 @@ CI de GitHub Actions ejecuta ambos módulos sólo en PR que cambian backend o el
 
 - Verificado: catálogo Java compilado, 2 tests HTTP sin errores (CI de PR #1).
 - Verificado: código fuente de Usuarios importado desde `HuertoHogar-Usuarios.zip` del 10/11/2026; 6 tests aprobados en CI.
-- Pendiente: login JWT, CRUD administrativo, órdenes, stock sincronizado, frontend React y despliegue.
+- En rama `feature/usuarios-login-jwt`: autenticación JWT y perfil protegido. Pendiente: CRUD administrativo, órdenes, stock sincronizado, frontend React y despliegue.
 - La publicación en Cloud Run/Firebase/Cloud SQL requiere revisar presupuesto y vincular el proyecto Google Cloud explícitamente. **No se ha creado infraestructura facturable.**
 
 Más contexto: [integración local](docs/INTEGRACION_LOCAL.md), [contratos](docs/CONTRATOS_API.md), [decisiones](docs/DECISIONES.md).
