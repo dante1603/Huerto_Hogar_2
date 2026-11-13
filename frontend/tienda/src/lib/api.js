@@ -25,7 +25,8 @@ async function request(url, options = {}) {
   }
   if (!response.ok) {
     if (response.status === 401) throw new ApiError(401, 'Credenciales incorrectas o sesión vencida.')
-    if (response.status === 409) throw new ApiError(409, 'Ya existe una cuenta con estos datos.')
+    if (response.status === 409) throw new ApiError(409, 'Conflicto: stock insuficiente, clave reutilizada o datos duplicados. Actualiza antes de reintentar.')
+    if (response.status === 403) throw new ApiError(403, 'Tu cuenta no tiene permiso para esta operación.')
     if (response.status === 400) throw new ApiError(400, 'Revisa los datos ingresados.')
     throw new ApiError(response.status, 'La solicitud no pudo completarse. Código ' + response.status + '.')
   }
@@ -49,5 +50,23 @@ export function registrarUsuario(data) {
   return request(usersHost + '/api/v1/usuarios', {
     method: 'POST',
     body: JSON.stringify(data),
+  })
+}
+
+export function crearPedido(data, token, idempotencyKey) {
+  return request(catalogHost + '/api/v1/pedidos', {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + token,
+      'Idempotency-Key': idempotencyKey,
+    },
+    body: JSON.stringify(data),
+  })
+}
+
+export function consultarPedidos(token, rol) {
+  const endpoint = rol === 'CLIENTE' ? '/mios' : '/pendientes'
+  return request(catalogHost + '/api/v1/pedidos' + endpoint, {
+    headers: { Authorization: 'Bearer ' + token },
   })
 }

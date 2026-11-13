@@ -9,7 +9,10 @@ Todos los servicios usan JSON y prefijo `/api/v1`. Esta tabla distingue expresam
 | `/api/v1/usuarios` | POST | usuarios | Registro público CLIENTE; sin asignación de rol privilegiado |
 | `/api/v1/usuarios/{id}` | GET | usuarios | Implementado: Bearer JWT, solo propietario o ADMINISTRADOR |
 | `/api/v1/auth/login` | POST | usuarios | Implementado: valida BCrypt y emite JWT HS256 de 30 minutos |
-| `/api/v1/pedidos` | POST/GET | pedidos | Pendiente |
+| `/api/v1/pedidos` | POST | Catálogo | MVP: CLIENTE JWT, reserva transaccional, Idempotency-Key UUID |
+| `/api/v1/pedidos/mios` | GET | Catálogo | Pedidos del CLIENTE autenticado |
+| `/api/v1/pedidos/pendientes` | GET | Catálogo | VENDEDOR/ADMINISTRADOR (solo lectura) |
+| `/api/v1/pedidos/{id}` | GET | Catálogo | Propietario o roles VENDEDOR/ADMINISTRADOR |
 | `/api/v1/entregas/{id}/telemetria` | POST/GET | entregas | Pendiente |
 
 ## Producto actual
@@ -32,7 +35,7 @@ Todos los servicios usan JSON y prefijo `/api/v1`. Esta tabla distingue expresam
 
 1. El juego informa inventario del cofre mediante un servicio autenticado y versionado.
 2. La base conserva el stock disponible para pedidos y reservas transaccionales.
-3. React envía solicitud de pedido; Spring Boot valida y reserva stock sin permitir ventas dobles.
+3. React envía solicitud de pedido; Spring Boot valida y reserva stock sin permitir ventas dobles (**incluido en MVP**).
 4. El piloto en Galaxym acepta una entrega y registra transiciones autorizadas.
 5. El juego publica telemetría espacial con marcas temporales y coordenadas en marco solar; la tienda visualiza con el visor orbital reutilizado.
 6. El cliente entrega código de confirmación de un solo uso; la API valida cierre.
