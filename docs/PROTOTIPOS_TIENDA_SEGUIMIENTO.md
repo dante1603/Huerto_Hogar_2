@@ -40,6 +40,12 @@ Se recuperaron las cuatro fuentes nombradas arriba, incluidas la versión orbita
 - `window.GalaxymDelivery` expone `getRecipe`, `sampleSystem`, `getState`, `setTelemetry(payload)` y `clearTelemetry`. La telemetría inyectada exige `sourceId`, tiempo, `orderId` coincidente y XYZ numéricos, pero **carece de autenticación, frescura, persistencia, validación de marcos y puente API**. Cualquier script en la página podría inyectarla: nunca confiar en ella para producción.
 - Sin inyección, el reloj y la nave avanzan como simulación. Incluso los rótulos de coordenadas solares reales de los cuerpos no convierten la posición simulada de la nave en una posición verificada.
 
+## Contraste de parámetros con el repositorio de Galaxym
+
+- En `integration/solar-system-unified-2026-11-11`, `src/simulation/system/authored-orbits.json` usa los mismos desplazamientos orbitales, ejes, períodos y radios incluidos en la receta embebida del HTML orbital (la fuente que el propio HTML declara).
+- En el **`main` consultado el 14-11-2026**, los ejes de rotación propios (`spin.axis`) de tres cuerpos son distintos: Yermo `[0,1,0]`, Bruma `[0.12,1,0.08]`, Árido `[0,1,0]`, mientras que el prototipo usa `[0,3300,2400]` en los tres. La ubicación del punto de aterrizaje calculado mediante `spinLocalToSolar` puede divergir aunque las órbitas posicionales sean idénticas.
+- Por ello **no** copiar `GALAXYM_RECIPE` como dato fijo de producción; consumir un manifiesto orbital versionado generado por el canon del juego y asociar el reloj y el marco espacial a cada muestra. El mapa conceptual y sus controles siguen siendo reutilizables.
+
 ## Terminal diegética del repartidor
 
 - Vistas de cola, encargo, manifiesto de carga, mapa orbital y salida JSON demo, con constantes orbitales similares a la tienda.
