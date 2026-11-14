@@ -65,6 +65,14 @@ Catálogo y Usuarios admiten `APP_ALLOWED_ORIGINS` separados por comas; en hosti
 - `src/hooks/useCarrito.js`: estado del carrito y persistencia de almacenamiento; las reglas puras siguen en `src/lib/cart.js`.
 - `src/hooks/useSesion.js`: sesión React; las operaciones de almacenamiento JWT siguen en `src/lib/session.js`.
 - `src/lib/api.js`: contratos de red existentes; no modificados en este corte.
-- `src/3d/models/`: sitio reservado para modelos procedurales provisionales del prototipo espacial, **sin modelos recuperados todavía**. Ver su README para la política de nombres, SKU, reemplazo y estado de aprobación.
+- `src/3d/models/`: seis modelos procedurales originales recuperados, cada uno en su propio módulo, aún **provisionales/no aprobados**. Ver su README para nombres, SKU, reemplazo y limitaciones.
 
-**Invariantes de este refactor:** se conservan exactamente las rutas, contratos REST, estilos CSS, componentes comerciales, clave del carrito, sesión, idempotencia y comportamiento de compra. No se integra todavía el HTML espacial ni se incorporan nuevos recursos 3D. La navegación según roles y el E2E siguen pendientes de un corte funcional posterior.
+**Invariantes de este refactor:** se conservan exactamente las rutas, contratos REST, estilos CSS, componentes comerciales, clave del carrito, sesión, idempotencia y comportamiento de compra. Se conservan las páginas y contratos de la aplicación; la galería experimental 3D se presenta separada de la venta. La navegación según roles y el E2E siguen pendientes de un corte funcional posterior.
+
+## Colección 3D recuperada — 14/11/2026
+
+La página `/productos` incorpora una **galería visual independiente**, con visor WebGL 1 nativo/fallback Canvas 2D. Incluye Zorbulbo, Lunahoja, Crisollo, Solabaya, Nebupoma y Miramelón, extraídos del HTML original y disponibles como seis archivos bajo `src/3d/models/`. Los modelos **son provisionales** y aún no han sido aprobados. Se cargan bajo demanda, con un único canvas y liberación de recursos; no se incorpora Three.js.
+
+Las seis muestras **no están a la venta**: el inventario, precio, nombres comerciales y stock siguen siendo los que devuelve Spring Boot. No hay asignaciones SKU→modelo inventadas. El seguimiento orbital del HTML y su simulador de estados permanecen separados de la aplicación React: no son telemetría real ni se han portado en este corte.
+
+El próximo incremento visual podrá vincular modelos aprobados a productos reales mediante `src/3d/modelRegistry.js` y migrar el diseño espacial de la tienda; la integración de seguimiento requiere un backend de entrega y telemetría autenticada.

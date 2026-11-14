@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import ProductGrid from '../components/ProductGrid.jsx'
+import PrototypeShowcase from '../3d/PrototypeShowcase.jsx'
 
 export default function Productos({ products, loading, error, add, retry }) {
   const [planet, setPlanet] = useState('Todos')
@@ -11,5 +12,6 @@ export default function Productos({ products, loading, error, add, retry }) {
       {planets.map((name) => <button key={name} type="button" className={name === planet ? 'chip selected' : 'chip'} onClick={() => setPlanet(name)} aria-pressed={name === planet}>{name}</button>)}
     </div>}
     <ProductGrid products={filtered} loading={loading} error={error} add={add} retry={retry} />
+    <PrototypeShowcase />
   </section>
 }
