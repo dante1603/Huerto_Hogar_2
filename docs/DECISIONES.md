@@ -42,3 +42,9 @@ No confundir resultados de MockMvc/H2 con pruebas de conectividad MySQL, Cloud R
 - GalatiCoins es la unidad ficticia del catálogo: **no se realiza cargo bancario**.
 - JWT HS256: las dos APIs reciben el mismo secreto **solo en MVP local**, con emisor igual. Se recomienda migrar a claves públicas para verificadores antes de despliegue con datos reales.
 - Quedan pendientes cancelación con devolución de stock, reconciliación de cofres del juego, despacho, notificaciones, OTP y E2E/MySQL real.
+
+## Normalización de paquetes del servicio Usuarios — 14/11/2026
+
+- Se adopta `cl.huertohogar.usuarios` como paquete raíz Java del microservicio Usuarios; reemplaza `com.example.demo` en código y pruebas.
+- Punto de entrada: `UsuariosApplication`. Se conservan paquetes funcionales internos (`controller`, `dto`, `models.entities`, `repositories`, `services`, `config`) para evitar mezclar renombrado con nuevas responsabilidades.
+- No cambian endpoints, esquema de datos, JWT, perfiles, `pom.xml` ni el proceso Spring Boot independiente. Validación por CI en la PR del corte; MySQL real y E2E se verifican por separado.

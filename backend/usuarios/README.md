@@ -1,7 +1,7 @@
 # HuertoHogar · Microservicio de Usuario (avance Fullstack II)
 
 Proyecto basado en **`microservicio_avance.zip`** de la carpeta de la asignatura.
-Se reemplazó el ejemplo de **Vehículos** por el dominio **Usuario**, manteniendo el paquete Java `com.example.demo` para evitar cambios innecesarios en el punto de entrada.
+Se reemplazó el ejemplo de **Vehículos** por el dominio **Usuario**. El paquete de aplicación y pruebas es `cl.huertohogar.usuarios`; el punto de entrada Spring Boot es `UsuariosApplication`. El cambio es exclusivamente estructural: mantiene los contratos REST, la seguridad y el modelo de datos.
 
 ## Qué incluye
 
