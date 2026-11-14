@@ -12,6 +12,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
     List<Producto> findAllByOrderByIdAsc();
 
+    boolean existsBySku(String sku);
+    boolean existsBySkuAndIdNot(String sku, Long id);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Producto p where p.id = :id")
     Optional<Producto> findPorIdParaReserva(@Param("id") Long id);

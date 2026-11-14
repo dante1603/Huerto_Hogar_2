@@ -76,6 +76,9 @@ public class PedidosSecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/api/v1/productos", "/api/v1/productos/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/productos").hasRole("ADMINISTRADOR")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/productos/*").hasRole("ADMINISTRADOR")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/productos/*").hasRole("ADMINISTRADOR")
                 .requestMatchers(HttpMethod.GET, "/swagger-ui.html", "/swagger-ui/**",
                     "/v3/api-docs", "/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/pedidos").hasRole("CLIENTE")
@@ -95,7 +98,7 @@ public class PedidosSecurityConfig {
         var cors = new CorsConfiguration();
         cors.setAllowedOrigins(Arrays.stream(rawOrigins.split(","))
             .map(String::trim).filter(s -> !s.isBlank()).toList());
-        cors.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         cors.setAllowedHeaders(List.of("Content-Type", "Authorization", "Idempotency-Key"));
         cors.setExposedHeaders(List.of("Location"));
         cors.setMaxAge(3600L);

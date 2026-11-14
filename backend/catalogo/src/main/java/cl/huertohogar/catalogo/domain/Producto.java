@@ -48,6 +48,16 @@ public class Producto {
         this.planetaOrigen = planetaOrigen;
     }
 
+    public void actualizar(String sku, String nombre, String descripcion,
+                           BigDecimal precio, int stock, String planetaOrigen) {
+        this.sku = sku;
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.precio = precio;
+        this.stock = stock;
+        this.planetaOrigen = planetaOrigen;
+    }
+
     public void reservar(int cantidad) {
         if (cantidad <= 0 || stock < cantidad) {
             throw new IllegalArgumentException("Reserva invalida");
