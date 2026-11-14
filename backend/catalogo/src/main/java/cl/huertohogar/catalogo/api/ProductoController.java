@@ -1,31 +1,29 @@
 package cl.huertohogar.catalogo.api;
 
 import cl.huertohogar.catalogo.domain.Producto;
-import cl.huertohogar.catalogo.persistence.ProductoRepository;
+import cl.huertohogar.catalogo.service.ProductoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/v1/productos")
 @Tag(name = "Productos", description = "Catalogo publico de productos galacticos")
 public class ProductoController {
-    private final ProductoRepository repository;
+    private final ProductoService service;
 
-    public ProductoController(ProductoRepository repository) {
-        this.repository = repository;
+    public ProductoController(ProductoService service) {
+        this.service = service;
     }
 
     @GetMapping
     @Operation(summary = "Listar productos ordenados por ID")
     public List<ProductoResponse> listar() {
-        return repository.findAllByOrderByIdAsc().stream()
+        return service.listar().stream()
             .map(ProductoController::toResponse)
             .toList();
     }
@@ -33,9 +31,7 @@ public class ProductoController {
     @GetMapping("/{id}")
     @Operation(summary = "Obtener un producto por ID")
     public ProductoResponse obtener(@PathVariable Long id) {
-        Producto producto = repository.findById(id)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Producto no encontrado"));
+        Producto producto = service.obtener(id);
         return toResponse(producto);
     }
 
