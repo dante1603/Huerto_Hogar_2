@@ -1,14 +1,26 @@
-# Modelos 3D de productos — fuente procedural
+# Modelos 3D de Huerto Estelar — fuente procedural
 
-Esta carpeta es el **lugar reservado** para recuperar el código Three.js de las frutas y verduras del prototipo HTML espacial. **Aún no contiene modelos**: primero hay que localizar y revisar ese HTML; no sustituirlo por geometría inventada.
+En esta carpeta están los **seis modelos originales**, recuperados del archivo versionado `docs/prototipos/huerto-estelar/galaxym_mercado_lowpoly.html`. Se conservan sus geometrías y paletas; todavía están **provisionales y no aprobados**.
 
-## Convención cuando se recuperen las fuentes
+| Archivo | Modelo |
+|---|---|
+| `zorbulbo.js` | Zorbulbo |
+| `lunahoja.js` | Lunahoja |
+| `crisollo.js` | Crisollo |
+| `solabaya.js` | Solabaya |
+| `nebupoma.js` | Nebupoma |
+| `miramelon.js` | Miramelón |
 
-- Un archivo JavaScript por modelo procedural, con nombre concreto y estable de la fruta o verdura (por ejemplo, `frutaDeOasis.js`).
-- Cada archivo exporta una función de creación de objetos/geométricas Three.js. No monta un renderer, no accede a React ni hace llamadas a la API.
-- Un futuro registro `src/3d/productModelRegistry.js` asociará el SKU de Catálogo al modelo, sin usar el nombre visible como clave de base de datos.
-- Marcar los modelos del prototipo como **provisionales / no aprobados** hasta la validación visual. Su reemplazo posterior podrá ser otro procedimiento o un GLB/GLTF, sin cambiar el pedido, el carrito ni la base de datos.
-- La escena/visor (cámara, controles, render y liberación de recursos) irá fuera de esta carpeta. Los archivos de modelo solo describirán la geometría/materiales.
-- Los archivos binarios GLB/GLTF aprobados, cuando existan, podrán vivir en `public/models3d/` para cargarse bajo demanda.
+## Responsabilidades
+- Cada archivo exporta una fábrica `createNombre()` sin renderizador, DOM, React ni llamadas a API. Conserva la geometría procedural original: métodos de `Sculpt` para bulbos, hojas, tubos, cristales, bayas y semillas.
+- `../core/sculpt.js`: utilidades matemáticas y constructor geométrico reutilizado por las seis fábricas. Devuelve buffers de vértices, normales y colores; **no es Three.js**.
+- `../core/modelRenderer.js`: reutiliza el shader original WebGL 1 y posee una alternativa de Canvas 2D, además de limpieza de buffers al desmontar.
+- `../ModelCanvas.jsx`: componente que construye una sola escena/canvas interactivo, carga módulos con `import()` y libera recursos al cambiar de modelo.
+- `../modelRegistry.js`: mantiene el inventario de las seis muestras y el contrato explícito `SKU → modelo`. Actualmente está **vacío**, porque los SKU reales de Spring Boot no corresponden a estas seis especies. Nunca inferir vinculación por nombre parecido.
+- `../PrototypeShowcase.jsx`: galería exploratoria con rótulo de **muestra no vendible**; no genera compras ni modifica stock o precios.
 
-Este corte no incorpora Three.js ni modifica la apariencia, los modelos originales o el flujo comercial. El HTML de referencia permanece fuera del repositorio hasta confirmar su fuente.
+## Reemplazo futuro
+Una vez aprobado el arte, se puede reemplazar cada fábrica procedural por una implementación mejor, o migrar a GLB/GLTF con un adaptador de carga. Conservar el ID del modelo y la interfaz del visor/registro, sin cambiar el backend comercial. Si se aprueba un archivo `.glb`, su ubicación propuesta es `public/models3d/`.
+
+## Verificación
+`npm test` construye las seis geometrías y comprueba la integridad numérica de sus atributos; `npm run build` verifica los imports dinámicos. CI **no** sustituye la aprobación visual, las pruebas en WebGL real, mobile ni la revisión de performance.
