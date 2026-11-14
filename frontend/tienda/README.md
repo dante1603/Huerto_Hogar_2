@@ -55,3 +55,16 @@ Catálogo y Usuarios admiten `APP_ALLOWED_ORIGINS` separados por comas; en hosti
 **No implementado:** cancelaciones, cofre sincronizado con Galaxym, entrega, confirmación OTP, seguimiento orbital, panel CRUD administrativo ni integración de misiones Galaxym. No hay despliegue ni URL pública de esta tienda.
 
 **Importante:** los dos backends deben compartir `JWT_SECRET_BASE64` y `JWT_ISSUER`. No generes dos secretos diferentes. El código frontend jamás debe conocer el secreto; sólo almacena el token de sesión. La confirmación de un pedido puede descontar inventario y no admite cancelación todavía; úsalo únicamente con datos de prueba.
+
+## Organización interna del frontend — 14/11/2026
+
+- `src/App.jsx`: composición de la aplicación; ya no implementa directamente la carga de productos, la persistencia del carrito o la sesión.
+- `src/app/AppRoutes.jsx`: tabla única de rutas React Router y vinculación de páginas.
+- `src/components/layout/`: encabezado y pie de página compartidos, sin cambios visuales.
+- `src/hooks/useCatalogo.js`: catálogo real, loading/error, reintento y cancelación al desmontar.
+- `src/hooks/useCarrito.js`: estado del carrito y persistencia de almacenamiento; las reglas puras siguen en `src/lib/cart.js`.
+- `src/hooks/useSesion.js`: sesión React; las operaciones de almacenamiento JWT siguen en `src/lib/session.js`.
+- `src/lib/api.js`: contratos de red existentes; no modificados en este corte.
+- `src/3d/models/`: sitio reservado para modelos procedurales provisionales del prototipo espacial, **sin modelos recuperados todavía**. Ver su README para la política de nombres, SKU, reemplazo y estado de aprobación.
+
+**Invariantes de este refactor:** se conservan exactamente las rutas, contratos REST, estilos CSS, componentes comerciales, clave del carrito, sesión, idempotencia y comportamiento de compra. No se integra todavía el HTML espacial ni se incorporan nuevos recursos 3D. La navegación según roles y el E2E siguen pendientes de un corte funcional posterior.
