@@ -1,5 +1,6 @@
 package cl.huertohogar.catalogo;
 
+import cl.huertohogar.catalogo.persistence.ProductoRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,6 +19,9 @@ class ProductoControllerTest {
     @Autowired
     MockMvc mvc;
 
+    @Autowired
+    ProductoRepository productos;
+
     @Test
     void listaProductosDelCatalogoDemo() throws Exception {
         mvc.perform(get("/api/v1/productos"))
@@ -25,6 +29,15 @@ class ProductoControllerTest {
             .andExpect(jsonPath("$.length()").value(3))
             .andExpect(jsonPath("$[0].sku").value("BRU-TUB-001"))
             .andExpect(jsonPath("$[0].stock").value(15));
+    }
+
+    @Test
+    void obtieneProductoRealPorId() throws Exception {
+        var producto = productos.findAllByOrderByIdAsc().get(0);
+        mvc.perform(get("/api/v1/productos/{id}", producto.getId()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(producto.getId()))
+            .andExpect(jsonPath("$.sku").value(producto.getSku()));
     }
 
     @Test
