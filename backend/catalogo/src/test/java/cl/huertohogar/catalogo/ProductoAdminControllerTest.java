@@ -90,7 +90,7 @@ class ProductoAdminControllerTest {
             .andExpect(jsonPath("$.stock").value(14))
             .andReturn().getResponse().getContentAsString();
 
-        long id = com.jayway.jsonpath.JsonPath.read(body, "$.id");
+        int id = com.jayway.jsonpath.JsonPath.read(body, "$.id");
         mvc.perform(get(ROOT + "/{id}", id))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.sku").value("TEST-NUEVO"));
