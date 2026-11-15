@@ -398,7 +398,7 @@ def daemon_services():
                 name = entry["name"]
                 if not check_process_alive(pid):
                     print(f"[!] ADVERTENCIA: {name} (PID: {pid}) ha finalizado inesperadamente.", flush=True)
-    except (KeyboardInterrupt, SystemExit):
+    except KeyboardInterrupt:
         pass
     finally:
         if owns_stack:
