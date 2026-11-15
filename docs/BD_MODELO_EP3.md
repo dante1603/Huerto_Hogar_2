@@ -95,10 +95,12 @@ El contenedor ejecuta los scripts de docker-entrypoint-initdb.d **solo en la pri
 La UI permite crear CLIENTE, pero aún no existe un endpoint público de provisión de usuarios privilegiados (y no debe existir sin una autorización robusta).
 
 Procedimiento controlado de laboratorio ejecutado y validado en Gate 3 (ver docs/VERIFICACION_MYSQL_EP3.md):
-1. Aprovisionamiento controlado de una cuenta de prueba `ADMINISTRADOR` efímera con credencial dinámica generada en memoria (sin hashes ni contraseñas estáticas en git), inscrita con rol base `CLIENTE` y posterior elevación en la base de datos local `huertohogar_usuarios.usuario`, rotando y deshabilitando cualquier cuenta previa y garantizando que el registro público continúe restringido exclusivamente a `CLIENTE`.
+1. Aprovisionamiento controlado de una cuenta de prueba `ADMINISTRADOR` efímera con credencial dinámica generada en memoria (sin hashes ni contraseñas estáticas en git), inscrita con rol base `CLIENTE` y posterior elevación en la base de datos local `huertohogar_usuarios.usuario`, garantizando que el registro público continúe restringido exclusivamente a `CLIENTE`. El runner es compatible tanto con bases de datos preexistentes (donde revoca y deshabilita la cuenta histórica `admin.gate3@huertohogar.cl` a rol `CLIENTE` y verifica rechazo HTTP 401) como con bases de datos limpias (donde verifica su ausencia y rechazo 401 sin abortar).
 2. Iniciar sesión mediante `POST /api/v1/auth/login` para emitir el JWT con claim `"rol": "ADMINISTRADOR"`.
 3. Crear productos de prueba aislados mediante la API REST de Catálogo (`POST /api/v1/productos`) usando dicho JWT.
-4. El rol `VENDEDOR` permanece reservado para futuras fases donde se incorporen transiciones operativas de despacho de pedidos.
+4. Al concluir la suite, el administrador efímero es degradado a rol `CLIENTE` y su credencial invalidada.
+5. **Limitación de seguridad de JWT emitidos:** La degradación de rol en la tabla `usuario` y el bloqueo de contraseña invalidan inmediatamente nuevos logins y renovaciones (`POST /api/v1/auth/refresh`), pero **no revocan de forma instantánea los JWT Bearer ya emitidos** mientras no expire su vigencia (30 minutos en `LoginService`), debido a la naturaleza autocontenida y sin blacklist de los tokens JWT en esta arquitectura. En este entorno de laboratorio, la parada completa de los procesos JVM gestionados al finalizar la prueba asegura el cese efectivo de cualquier sesión activa.
+6. El rol `VENDEDOR` permanece reservado para futuras fases donde se incorporen transiciones operativas de despacho de pedidos.
 
 ## 6. Estado de validación con MySQL 8.4 (Gate 3 PASS)
 

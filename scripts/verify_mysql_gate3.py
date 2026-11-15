@@ -289,13 +289,36 @@ class ProcessManager:
 
 
 def rotate_compromised_admin():
-    """Invalida y deshabilita permanentemente la cuenta de prueba antigua expuesta en git."""
+    """Invalida y deshabilita permanentemente la cuenta de prueba antigua expuesta en git si existe."""
     sql = (
         "UPDATE huertohogar_usuarios.usuario "
         "SET contrasena_usuario = '$2a$10$ROTATED_DISABLED_ACCOUNT_EXPIRED', rol_usuario = 'CLIENTE' "
         "WHERE email_usuario = 'admin.gate3@huertohogar.cl';"
     )
     mysql_exec(sql)
+
+
+def check_historical_admin_state(email="admin.gate3@huertohogar.cl", password="AdminGate3!2026"):
+    """
+    Verifica de manera robusta el estado de una cuenta administrativa historica:
+    - (a) Base previa con cuenta existente: comprueba que fue revocada a rol CLIENTE y rechaza login con 401.
+    - (b) Base limpia donde nunca existio la cuenta: comprueba su ausencia en BD y rechaza login con 401.
+    """
+    # 1. El intento de login con credencial historica SIEMPRE debe ser rechazado con HTTP 401 Unauthorized
+    expect(8081, "POST", "/api/v1/auth/login", 401, payload={
+        "email": email,
+        "contrasena": password
+    })
+    print(f"[+] Login con credencial historica '{email}' rechazado con HTTP 401 Unauthorized", flush=True)
+
+    # 2. Verificacion del rol en MySQL
+    old_role = mysql_exec(f"SELECT rol_usuario FROM huertohogar_usuarios.usuario WHERE email_usuario = '{email}';").strip()
+    if old_role:
+        check(old_role == "CLIENTE", f"Cuenta historica existente revocada a rol CLIENTE (rol actual: {old_role})")
+        return "EXISTENTE_REVOCADA"
+    else:
+        print(f"[+] Base limpia: cuenta historica '{email}' no existe en BD (comprobada ausencia)", flush=True)
+        return "INEXISTENTE_LIMPIA"
 
 
 def provision_ephemeral_admin(run_id):
@@ -353,14 +376,13 @@ def run_full_gate3():
         print("\n--- PASO 2: Aislamiento de fixtures y productos de prueba ---", flush=True)
         rotate_compromised_admin()
 
-        # Validacion explicita de rechazo 401 a credenciales antiguas y confirmacion de rol no administrativo
-        expect(8081, "POST", "/api/v1/auth/login", 401, payload={
-            "email": "admin.gate3@huertohogar.cl",
-            "contrasena": "AdminGate3!2026"
-        })
-        print("[+] Login con cuenta antigua comprometida rechazado con HTTP 401 Unauthorized", flush=True)
-        old_role = mysql_exec("SELECT rol_usuario FROM huertohogar_usuarios.usuario WHERE email_usuario = 'admin.gate3@huertohogar.cl';")
-        check(old_role == "CLIENTE", f"Cuenta antigua revocada a rol CLIENTE (rol actual: {old_role})")
+        # Validacion explicita de rechazo 401 y comprobacion de estado (compatible con BD previa o BD limpia)
+        check_historical_admin_state("admin.gate3@huertohogar.cl", "AdminGate3!2026")
+
+        # Prueba de soporte de base limpia: cuenta inexistente simulada rechaza login y no aborta ejecucion
+        test_email_clean = f"inexistente.gate3.{run_id}@huertohogar.test"
+        clean_state = check_historical_admin_state(test_email_clean, "ClaveInexistente123!")
+        check(clean_state == "INEXISTENTE_LIMPIA", "Verificado soporte exitoso de ejecucion sobre base de datos limpia")
 
         admin_email, admin_pass = provision_ephemeral_admin(run_id)
 

@@ -51,12 +51,14 @@ huertohogar_usuarios
 
 ## 2. Aprovisionamiento Controlado y Aislamiento de Datos de Prueba
 
-1. **Rotación de Cuenta Previa y Aprovisionamiento de ADMINISTRADOR Efímero en BD local:**
-   - La cuenta de prueba previa `admin.gate3@huertohogar.cl` fue rotada y deshabilitada en la base de datos local (estableciendo un hash inválido que no coincide con ninguna clave), invalidando permanentemente la credencial expuesta en el historial.
+1. **Rotación de Cuenta Previa, Compatibilidad con BD Limpia y Aprovisionamiento de ADMINISTRADOR Efímero:**
+   - **Caso BD preexistente:** La cuenta de prueba previa `admin.gate3@huertohogar.cl` fue rotada y deshabilitada en la base de datos local (estableciendo un hash inválido que no coincide con ninguna clave), invalidando permanentemente la credencial expuesta en el historial. El runner comprueba que devuelva HTTP 401 en login y que su rol sea `CLIENTE`.
+   - **Caso BD limpia (nueva):** Si la suite se ejecuta sobre una base de datos limpia donde la cuenta histórica nunca existió, el runner comprueba su ausencia en la base de datos y verifica que cualquier intento de autenticación sea rechazado con HTTP 401, continuando la prueba sin abortar.
    - En cada ejecución del runner se genera una credencial administrativa fuerte y dinámica en memoria (`secrets.token_urlsafe(24)` + sufijo de complejidad).
    - Se registra inicialmente la cuenta efímera mediante el endpoint público `POST /api/v1/usuarios`, donde Spring Security calcula de forma natural el hash BCrypt con su `PasswordEncoder` sin necesidad de hashes estáticos en el repositorio.
    - La elevación a rol `ADMINISTRADOR` se realiza estrictamente mediante operación directa sobre la base de datos local `huertohogar_usuarios.usuario` (procedimiento de laboratorio, nunca expuesto por endpoint público).
-   - Al finalizar la ejecución, la credencial efímera es desactivada y su rol revocado.
+   - Al finalizar la ejecución, la credencial efímera es desactivada (hash modificado) y su rol revocado a `CLIENTE`.
+   - **Limitación de seguridad sobre JWT ya emitidos:** Degradar el rol en la tabla `usuario` e invalidar la contraseña bloquea inmediatamente nuevos logins (`POST /api/v1/auth/login`) y renovaciones de token (`POST /api/v1/auth/refresh`), pero **no revoca de manera instantánea los tokens de acceso JWT (Bearer) previamente emitidos** mientras no transcurra su ventana de expiración (30 minutos en `LoginService`), dado que los microservicios validan los claims firmados de forma desacoplada y sin lista negra centralizada. En este entorno de laboratorio, la parada completa de los procesos JVM iniciados por el runner al finalizar asegura la terminación de cualquier sesión activa.
    - Credencial administrativa autenticada mediante `POST /api/v1/auth/login` obteniendo un Bearer JWT con claim `"rol": "ADMINISTRADOR"`.
 
 2. **Aislamiento de Fixtures de Prueba con SKU y Claves Dinámicas:**
@@ -226,7 +228,7 @@ python scripts/verify_mysql_gate3.py
 
 La suite ejecuta 14 fases automatizadas con verificación continua en HTTP y MySQL:
 1. Comprobación de esquemas independientes en MySQL 8.4 para `huerto_app`.
-2. Rotación de cuenta antigua expuesta (`admin.gate3@huertohogar.cl`), confirmación de rechazo `401 Unauthorized` ante login, verificación en BD de degradación a rol `CLIENTE`, y provisión de administrador efímero con credencial en memoria.
+2. Comprobación de cuenta administrativa histórica (compatible tanto con BD existente donde fue rotada a rol `CLIENTE` y rechaza login con 401, como con BD limpia donde se verifica su ausencia y rechazo 401), validación de ejecución limpia simulada, y provisión de administrador efímero con credencial en memoria.
 3. Registro y login de clientes sintéticos con contraseñas seguras y emisión de JWT + refresh token.
 4. Creación de pedido comercial con reserva de inventario y bloqueo pesimista ordenado.
 5. Verificación de idempotencia (reintento idéntico `200 OK` sin doble descuento de stock, reintento alterado `409 Conflict`).
