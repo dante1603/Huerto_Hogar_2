@@ -57,12 +57,12 @@ Para preservar la integridad del historial, DELETE devuelve **409** si existen l
 
 Login entrega JWT HS256 (30 minutos) y refreshToken aleatorio de 256 bits (24 horas). La base Usuarios conserva **solo SHA-256** del refresh token en una nueva tabla `refresh_sesion`. POST `/api/v1/auth/refresh` exige JSON `{"refreshToken":"..."}` y rota la credencial de un solo uso en transacción con bloqueo pesimista. Reutilizar la credencial anterior produce HTTP 401. POST `/api/v1/auth/logout` revoca la credencial y responde HTTP 204 incluso si ya no existe. El JWT vigente no se revoca de inmediato: expira naturalmente a los 30 minutos (limitación del MVP).
 
-Nota: los refresh tokens son secretos y no deben mostrarse en logs, URLs ni capturas. La conexión y persistencia MySQL real aún requieren validación final; en CI se usa H2.
+Nota: los refresh tokens son secretos y no deben mostrarse en logs, URLs ni capturas. La persistencia y transaccionalidad con MySQL 8.4 real están validadas en Gate 3 (PASS; ver docs/VERIFICACION_MYSQL_EP3.md); en CI automatizado se conserva H2 como suite rápida de regresión.
 
 
 ## Contrato REST Productos / Pedidos (primer corte cinco microservicios)
 
-PUT/GET/DELETE /api/v1/interno/reservas/{referencia} requieren JWT SERVICIO_PEDIDOS. PUT acepta productos[{productoId,cantidad}]; crea reserva atómica (201), reintenta mismo UUID sin descontar (200), o devuelve 400/404/409. GET consulta snapshot y estado para reconciliar timeouts. DELETE compensa stock solo una vez y conserva tombstone de CANCELADA (204). Precio proviene del backend, no del navegador. Consulte docs/ARQUITECTURA_5_MICROSERVICIOS_EP3.md. **Existe un tercer proyecto Pedidos independiente (PR #21) con controlador y gateway, pero React aún usa Pedidos legado del Catálogo; no se ha verificado comunicación distribuida ni MySQL.**
+PUT/GET/DELETE /api/v1/interno/reservas/{referencia} requieren JWT SERVICIO_PEDIDOS. PUT acepta productos[{productoId,cantidad}]; crea reserva atómica (201), reintenta mismo UUID sin descontar (200), o devuelve 400/404/409. GET consulta snapshot y estado para reconciliar timeouts. DELETE compensa stock solo una vez y conserva tombstone de CANCELADA (204). Precio proviene del backend, no del navegador. Consulte docs/ARQUITECTURA_5_MICROSERVICIOS_EP3.md. El microservicio Pedidos independiente está validado junto a los otros 4 microservicios sobre HTTP real y MySQL 8.4 (Gate 3 PASS; ver docs/VERIFICACION_MYSQL_EP3.md). React aún usa Pedidos legado del Catálogo hasta la validación visual y conmutación de tráfico en la siguiente fase.
 
 
 ## Contrato Boleta (cuarto servicio, integrado PR #23; E2E pendiente)
@@ -72,7 +72,7 @@ PUT/GET/DELETE /api/v1/interno/reservas/{referencia} requieren JWT SERVICIO_PEDI
 | `/api/v1/boletas` | POST | JWT CLIENTE | `{pedidoId}`; 201 nueva, 200 reintento, 409 pedido no confirmado, 503 sin snapshot valido |
 | `/api/v1/boletas/{id}` | GET | JWT propietario o VENDEDOR/ADMINISTRADOR | 200, 404 si otro cliente |
 
-Se obtiene snapshot de `backend/pedidos` mediante el JWT del cliente delegado. No se aceptan usuario/total/precio por JSON. El documento es academico, inmutable y NO tributario; no prueba pago. Pedidos independiente no recibe aun trafico desde React. E2E real/MySQL pendientes.
+Se obtiene snapshot de `backend/pedidos` mediante el JWT del cliente delegado. No se aceptan usuario/total/precio por JSON. El documento es academico, inmutable y NO tributario; no prueba pago. Pedidos independiente no recibe aun trafico desde React. Persistencia E2E en MySQL 8.4 validada (Gate 3 PASS; ver docs/VERIFICACION_MYSQL_EP3.md).
 
 
 ## Contrato Detalle Boleta (quinto servicio; integración de código en evaluación)
@@ -83,7 +83,7 @@ Se obtiene snapshot de `backend/pedidos` mediante el JWT del cliente delegado. N
 | `/api/v1/detalles-boleta/boleta/{boletaId}` | GET | Propietario/STAFF | Líneas completas o 404 si aún no generadas |
 | `/api/v1/detalles-boleta/{id}` | GET | Propietario/STAFF | Una línea verificada o 404 |
 
-No existe POST arbitrario de cantidades, precios ni `idProducto`; se extraen de Pedidos después de validar Boleta mediante REST autenticado. `UNIQUE(id_boleta, numero_linea)` y transacción local garantizan una sola copia de cada posición. No es un documento tributario ni indica pago. MySQL, E2E real y cambios a tráfico React aún están pendientes.
+No existe POST arbitrario de cantidades, precios ni `idProducto`; se extraen de Pedidos después de validar Boleta mediante REST autenticado. `UNIQUE(id_boleta, numero_linea)` y transacción local garantizan una sola copia de cada posición. No es un documento tributario ni indica pago. Persistencia transaccional sobre MySQL 8.4 validada (Gate 3 PASS; ver docs/VERIFICACION_MYSQL_EP3.md). Cambios a tráfico React pendientes para la siguiente fase.
 
 
 ## Estados de Pedidos para expiracion opt-in
@@ -94,3 +94,15 @@ No existe POST arbitrario de cantidades, precios ni `idProducto`; se extraen de 
 ## Evidencia de red real en H2 — PR #27
 
 [GitHub Actions 43668577173](https://github.com/dante1603/Huerto_Hogar_2/actions/runs/43668577173): PASS 71 pruebas Java + cinco procesos REST sobre H2 independientes. La prueba cubre emisión JWT, Pedidos↔Productos, Boleta→Pedidos, Detalle→Boleta/Pedidos, idempotencia, bloqueo de otras identidades, importes y stock. El enrutamiento de errores conserva el 409 de conflicto mediante `DispatcherType.ERROR`. No acredita MySQL ni navegador React.
+
+
+## Evidencia transaccional real sobre MySQL 8.4 — Gate 3 (PR #30)
+
+Verificación completa ejecutada en frío y documentada en [VERIFICACION_MYSQL_EP3.md](VERIFICACION_MYSQL_EP3.md):
+- Cinco microservicios independientes sobre HTTP real (`8080`, `8081`, `8082`, `8083`, `8084`) y esquemas MySQL 8.4 independientes.
+- Flujo transaccional completo: registro de cliente (`POST /api/v1/usuarios`), autenticación y emisión de refresh token (`POST /api/v1/auth/login`), creación de pedido con bloqueo pesimista y descuento de inventario (`POST /api/v1/pedidos`), emisión de boleta académica inmutable (`POST /api/v1/boletas`) y generación de líneas de detalle (`POST /api/v1/detalles-boleta`).
+- Idempotencia validada: reintentos idénticos responden 200 sin duplicar registros ni descontar stock extra; reintentos con payload alterado responden 409.
+- Aislamiento multi-inquilino verificado (403/404 al consultar entidades de otro cliente).
+- Reinicio en frío de las 5 JVMs con persistencia íntegra verificada en HTTP y MySQL.
+- Renovación de sesión post-reinicio exitosa con el refresh token emitido antes del reinicio; bloqueo de reuso (401) verificado.
+- Reproducible mediante `python scripts/verify_mysql_gate3.py`. Resultado: **GATE 3 PASS**.

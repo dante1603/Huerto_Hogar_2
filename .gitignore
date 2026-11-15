@@ -1,9 +1,14 @@
 # Ignore runtime and local secrets in any module
 .env
 **/.env
+*.secret
+**/*.secret
 **/target/
 **/node_modules/
 **/dist/
 .DS_Store
 .idea/
 *.log
+**/*.log
+**/__pycache__/
+*.py[cod]

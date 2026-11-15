@@ -12,6 +12,7 @@ services:
     volumes:
       - huerto_mysql_data:/var/lib/mysql
       - ./infra/mysql/01-create-catalog.sql:/docker-entrypoint-initdb.d/01-create-catalog.sql:ro
+      - ./infra/mysql/02-create-services.sql:/docker-entrypoint-initdb.d/02-create-services.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 10s
