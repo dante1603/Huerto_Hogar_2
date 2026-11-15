@@ -220,17 +220,27 @@ def get_process_snapshot(pid):
         try:
             res = subprocess.run(
                 ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
-                capture_output=True, text=True, timeout=8
+                capture_output=True, text=True, timeout=25
             )
+            debug = os.environ.get("HH_DEBUG_PROCESS_SNAPSHOT") == "1"
+            if debug:
+                print(f"[snapshot Windows] exit={res.returncode}, "
+                      f"stdout_len={len(res.stdout)}, stderr_len={len(res.stderr)}",
+                      file=sys.stderr)
             if res.returncode != 0 or not res.stdout.strip():
                 return None
             data = json.loads(res.stdout)
             command = data.get("CommandLine")
             created = data.get("Created")
+            if debug:
+                print(f"[snapshot Windows] command_type={type(command).__name__}, "
+                      f"creation_type={type(created).__name__}", file=sys.stderr)
             if not isinstance(command, str) or not isinstance(created, str):
                 return None
             return {"command_line": command, "created_at": created}
-        except (OSError, ValueError, subprocess.TimeoutExpired):
+        except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
+            if os.environ.get("HH_DEBUG_PROCESS_SNAPSHOT") == "1":
+                print(f"[snapshot Windows] error={type(exc).__name__}", file=sys.stderr)
             return None
 
     stat_path = Path(f"/proc/{pid}/stat")
