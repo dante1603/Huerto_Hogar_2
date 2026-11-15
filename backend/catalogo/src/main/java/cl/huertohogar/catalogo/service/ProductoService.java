@@ -2,7 +2,9 @@ package cl.huertohogar.catalogo.service;
 
 import cl.huertohogar.catalogo.api.ProductoMutationRequest;
 import cl.huertohogar.catalogo.domain.Producto;
+import cl.huertohogar.catalogo.domain.EstadoReserva;
 import cl.huertohogar.catalogo.persistence.LineaPedidoRepository;
+import cl.huertohogar.catalogo.persistence.LineaReservaRepository;
 import cl.huertohogar.catalogo.persistence.ProductoRepository;
 import java.util.List;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -15,10 +17,13 @@ import org.springframework.web.server.ResponseStatusException;
 public class ProductoService {
     private final ProductoRepository repository;
     private final LineaPedidoRepository lineas;
+    private final LineaReservaRepository lineasReservadas;
 
-    public ProductoService(ProductoRepository repository, LineaPedidoRepository lineas) {
+    public ProductoService(ProductoRepository repository, LineaPedidoRepository lineas,
+                           LineaReservaRepository lineasReservadas) {
         this.repository = repository;
         this.lineas = lineas;
+        this.lineasReservadas = lineasReservadas;
     }
 
     @Transactional(readOnly = true)
@@ -52,6 +57,11 @@ public class ProductoService {
             .orElseThrow(ProductoService::noEncontrado);
         String sku = request.sku().strip();
         if (repository.existsBySkuAndIdNot(sku, id)) throw skuDuplicado();
+        if (producto.getStock() != request.stock()
+            && lineasReservadas.existsByProductoIdAndReserva_Estado(id, EstadoReserva.RESERVADA)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "No se puede editar stock con reservas activas");
+        }
         producto.actualizar(sku, request.nombre().strip(), request.descripcion(),
             request.precio(), request.stock(), request.planetaOrigen().strip());
         try {
@@ -70,6 +80,10 @@ public class ProductoService {
         if (lineas.existsByProductoId(id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                 "El producto tiene pedidos y no puede eliminarse");
+        }
+        if (lineasReservadas.existsByProductoIdAndReserva_Estado(id, EstadoReserva.RESERVADA)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "El producto tiene reservas de stock activas");
         }
         repository.delete(producto);
         repository.flush();
