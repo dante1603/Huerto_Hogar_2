@@ -95,10 +95,10 @@ El contenedor ejecuta los scripts de docker-entrypoint-initdb.d **solo en la pri
 La UI permite crear CLIENTE, pero aún no existe un endpoint público de provisión de usuarios privilegiados (y no debe existir sin una autorización robusta).
 
 Procedimiento controlado de laboratorio ejecutado y validado en Gate 3 (ver docs/VERIFICACION_MYSQL_EP3.md):
-1. Registrar dos cuentas de prueba con RUT y email válidos (una destinada a VENDEDOR y otra a ADMINISTRADOR), sin usar credenciales de producción.
-2. Un operador con permisos sobre la BD local asigna manualmente rol_usuario VENDEDOR / ADMINISTRADOR exclusivamente a los IDs identificados y documenta el cambio. **Nunca** exponer esta operación como formulario público ni incluir contraseñas en Git.
-3. Iniciar sesión nuevamente; el JWT nuevo debe contener el rol vigente. El token antiguo no adquiere permisos por editar sessionStorage.
-4. Probar permisos de lectura/escritura y guardar evidencia. Una actualización de rol en la BD no invalida automáticamente JWT anteriormente emitidos; considerar esa limitación de este MVP.
+1. Aprovisionamiento controlado de una cuenta de prueba `ADMINISTRADOR` directamente en la base de datos local `huertohogar_usuarios.usuario` con hash BCrypt, garantizando que el registro público continúe restringido exclusivamente a `CLIENTE`.
+2. Iniciar sesión mediante `POST /api/v1/auth/login` para emitir el JWT con claim `"rol": "ADMINISTRADOR"`.
+3. Crear productos de prueba aislados mediante la API REST de Catálogo (`POST /api/v1/productos`) usando dicho JWT.
+4. El rol `VENDEDOR` permanece reservado para futuras fases donde se incorporen transiciones operativas de despacho de pedidos.
 
 ## 6. Estado de validación con MySQL 8.4 (Gate 3 PASS)
 

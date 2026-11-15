@@ -1,7 +1,7 @@
 # EP3 — MySQL real para los cinco microservicios (Windows / PowerShell)
 
 **Estado:** **Gate 1, Gate 2 y Gate 3 APROBADOS (PASS)** con Docker y MySQL 8.4.13 real.
-Evidencia completa de ejecución, transaccionalidad, persistencia tras reinicio y renovación de refresh tokens documentada en [VERIFICACION_MYSQL_EP3.md](file:///c:/Users/Admin/Documents/proyectos/HuertoHogar2/docs/VERIFICACION_MYSQL_EP3.md).
+Evidencia completa de ejecución, transaccionalidad, persistencia tras reinicio y renovación de refresh tokens documentada en [VERIFICACION_MYSQL_EP3.md](VERIFICACION_MYSQL_EP3.md).
 
 Rama de preparación: `fix/mysql-cinco-esquemas-2026-11-15` (PR contra `integration/fullstack-2026-11-14`).
 
@@ -84,7 +84,7 @@ Con las cinco JVM funcionando sobre MySQL 8.4 real:
 5. Se reiniciaron en frío los cinco servicios; la persistencia de stock, pedidos, boletas y detalles se confirmó intacta.
 6. Se renovó la sesión exitosamente usando el refresh token previo al reinicio, y se comprobó el bloqueo anti-replay (401 en reuso).
 
-Evidencia completa y script ejecutable: `scripts/verify_mysql_gate3.py` y [VERIFICACION_MYSQL_EP3.md](file:///c:/Users/Admin/Documents/proyectos/HuertoHogar2/docs/VERIFICACION_MYSQL_EP3.md).
+Evidencia completa y script ejecutable: `scripts/verify_mysql_gate3.py` y [VERIFICACION_MYSQL_EP3.md](VERIFICACION_MYSQL_EP3.md).
 
 El reconciliador de Pedidos permanece **deshabilitado** (`RECONCILIACION_HABILITADA=false`) hasta que la recuperación ante fallos de red se valide explícitamente en el siguiente corte.
 

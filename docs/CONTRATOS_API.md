@@ -98,7 +98,7 @@ No existe POST arbitrario de cantidades, precios ni `idProducto`; se extraen de 
 
 ## Evidencia transaccional real sobre MySQL 8.4 — Gate 3 (PR #30)
 
-Verificación completa ejecutada en frío y documentada en [VERIFICACION_MYSQL_EP3.md](file:///c:/Users/Admin/Documents/proyectos/HuertoHogar2/docs/VERIFICACION_MYSQL_EP3.md):
+Verificación completa ejecutada en frío y documentada en [VERIFICACION_MYSQL_EP3.md](VERIFICACION_MYSQL_EP3.md):
 - Cinco microservicios independientes sobre HTTP real (`8080`, `8081`, `8082`, `8083`, `8084`) y esquemas MySQL 8.4 independientes.
 - Flujo transaccional completo: registro de cliente (`POST /api/v1/usuarios`), autenticación y emisión de refresh token (`POST /api/v1/auth/login`), creación de pedido con bloqueo pesimista y descuento de inventario (`POST /api/v1/pedidos`), emisión de boleta académica inmutable (`POST /api/v1/boletas`) y generación de líneas de detalle (`POST /api/v1/detalles-boleta`).
 - Idempotencia validada: reintentos idénticos responden 200 sin duplicar registros ni descontar stock extra; reintentos con payload alterado responden 409.
