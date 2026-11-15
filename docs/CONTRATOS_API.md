@@ -89,3 +89,8 @@ No existe POST arbitrario de cantidades, precios ni `idProducto`; se extraen de 
 ## Estados de Pedidos para expiracion opt-in
 
 `INICIADO → CANCELANDO → CANCELADO` cuando una intención envejece y el reconciliador opcional solicita DELETE a Productos. La transición a CANCELANDO se confirma localmente antes de REST, bloqueando `PENDIENTE` si llega una confirmación tardía. El último estado solo sucede cuando DELETE termina correctamente. Error de red conserva CANCELANDO para retry seguro. `PENDIENTE` permanece como pedido reservado: no se cancela automáticamente. Activación por entorno explícita tras E2E con MySQL.
+
+
+## Evidencia de red real en H2 — PR #27
+
+[GitHub Actions 43668577173](https://github.com/dante1603/Huerto_Hogar_2/actions/runs/43668577173): PASS 71 pruebas Java + cinco procesos REST sobre H2 independientes. La prueba cubre emisión JWT, Pedidos↔Productos, Boleta→Pedidos, Detalle→Boleta/Pedidos, idempotencia, bloqueo de otras identidades, importes y stock. El enrutamiento de errores conserva el 409 de conflicto mediante `DispatcherType.ERROR`. No acredita MySQL ni navegador React.

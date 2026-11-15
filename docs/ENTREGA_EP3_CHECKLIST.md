@@ -11,7 +11,7 @@ Anexo: https://drive.google.com/file/d/1U7bZVSOMwfoYaYly6IcSZ_BvYIgEn4lO/view
 |---|---:|---|---|
 | IE3.1.1 backend + BD | 8% | Entidades JPA, repositorios, servicios, Docker MySQL | MySQL real y persistencia reinicio |
 | IE3.2.1 CRUD/Swagger | 8% | PR #12 integrado | Swagger abierto y captura de operaciones |
-| IE3.2.2 API REST integrada | 6% | React fetch, endpoints Spring, Vite proxy | E2E navegador + MySQL |
+| IE3.2.2 API REST integrada | 6% | React fetch + cinco servicios comprobados vía HTTP real/H2 en PR #27 | Falta E2E navegador + MySQL y conmutación de React |
 | IE3.3.1 JWT y roles | 6% | Spring Security/BCrypt, PR #14; renovación rotativa PR #16 | Provisión controlada de cuentas de rol y pruebas finales con MySQL |
 | IE3.3.2 sesión persistente | 6% | sessionStorage, expiración, refresh auto PR #17 y tests Node | Prueba en navegador real, seguridad de almacenamiento y MySQL |
 | IE3.3.3 guardas frontend | 6% | PR #13: admin/vendedor/cliente | Prueba real de tres usuarios y capturas |
@@ -27,7 +27,7 @@ Anexo: https://drive.google.com/file/d/1U7bZVSOMwfoYaYly6IcSZ_BvYIgEn4lO/view
 | ERS terminada | docs/ERS_EP3.md | BORRADOR: requiere aprobación de alcance y evidencia |
 | Manual de usuario | docs/MANUAL_EP3.md | BORRADOR: faltan pantallazos |
 | Documentación de API | docs/INFORME_INTEGRACION_EP3.md y docs/CONTRATOS_API.md | PARCIAL: falta volcar al Anexo 3 y capturas Swagger |
-| Documento APIs e integración | docs/INFORME_INTEGRACION_EP3.md | BORRADOR: faltan resultados MySQL/REST reales |
+| Documento APIs e integración | docs/INFORME_INTEGRACION_EP3.md | PARCIAL: REST real/H2 PASS; faltan MySQL y navegador |
 | Modelo de datos | docs/BD_MODELO_EP3.md | DERIVADO DE JPA, pendiente comparar con INFORMATION_SCHEMA |
 
 El caso HuertoHogar original requiere **validación docente del alcance**. La adaptación Galaxym no cuenta aquí con un comprobante de aceptación; confirmar antes de cerrar ERS.
@@ -43,12 +43,15 @@ Checklist final: comprobar el mismo commit de GitHub en ZIP, eliminar target/nod
 | Servicio | Estado real de código | Faltante |
 |---|---|---|
 | Usuarios | Integrado + CI | MySQL, navegador, cuentas de prueba |
-| Productos | Catálogo integrado + reservas internas CI | MySQL, prueba de red, separación definitiva de la ruta legada |
-| Pedidos | Nuevo proceso independiente PR #21 integrado + CI H2 | Reconciliación/compensación, cambio de ruta React, MySQL y E2E |
-| Boleta | Cuarto servicio integrado PR #23, 6/6 MockMvc/H2 | MySQL, HTTP entre procesos y React; no es boleta tributaria |
-| Detalle Boleta | Quinto servicio integrado PR #25; 9/9 H2/MockMvc PASS en CI | MySQL, HTTP real, E2E y verificación final |
+| Productos | HTTP real con Pedidos, reserva y stock verificados en PR #27 | MySQL, concurrencia/red degradada, ruta legada |
+| Pedidos | Independiente PR #21, compensación opt-in PR #26, HTTP real PR #27 | MySQL, activar/verificar compensación, React y navegador |
+| Boleta | PR #23; HTTP real con Pedidos PASS PR #27 | MySQL y React; comprobante no tributario |
+| Detalle Boleta | PR #25; HTTP real con Boleta/Pedidos PASS PR #27 | MySQL, React, E2E navegador y cierre documental |
 
 Se mantiene abierta la issue #19 y la PR #8 draft hacia main; no confundir avance del código con entrega comprobada.
 
 
 **Seguimiento de consistencia distribuida:** el corte de compensación opt-in de Pedidos evita confirmaciones tardías tras expirar una intención y usa DELETE idempotente con tombstone en Productos. El programador no se activa hasta completar MySQL y E2E con fallos de red reales. No cambiar proxy de React ni `main` por un PASS en H2.
+
+
+**Evidencia transversal:** [GitHub Actions 43668577173](https://github.com/dante1603/Huerto_Hogar_2/actions/runs/43668577173) confirma 71 tests y circuito REST de cinco JVM con H2 independientes. No demuestra MySQL ni funcionamiento de la tienda React en navegador. Ver `docs/VERIFICACION_HTTP_EP3.md`.

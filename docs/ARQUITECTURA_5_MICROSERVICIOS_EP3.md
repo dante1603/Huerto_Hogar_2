@@ -1,6 +1,6 @@
 # Contratos de separación — cinco microservicios HuertoHogar (14-11-2026)
 
-**Alcance confirmado con Dante:** Usuarios, Productos, Pedidos, Boleta y Detalle Boleta. El profesor indicó cinco servicios al equipo; este corte no afirma que los cinco estén operativos.
+**Alcance confirmado con Dante:** Usuarios, Productos, Pedidos, Boleta y Detalle Boleta. El profesor indicó cinco servicios al equipo; los cinco existen en código y pasaron un contrato HTTP real/H2; aún no están validados con MySQL ni navegador.
 
 ## Estado actual
 
@@ -10,7 +10,7 @@
 | Productos | Spring Boot Catálogo, con CRUD y API nueva de reserva | SKU, precio, stock, reservas |
 | Pedidos | Tercer Spring Boot independiente creado en PR #21; aún sin tráfico React | Pedido y líneas en esquema propio proyectado (MySQL pendiente); Catálogo conserva ruta legada |
 | Boleta | Cuarto Spring Boot integrado PR #23, CI H2/MockMvc PASS (6 tests); tráfico React y MySQL pendientes | Boleta única por pedido, identidad y total verificados vía REST |
-| Detalle Boleta | Quinto Spring Boot integrado PR #25, CI H2/MockMvc PASS (9 tests); MySQL y REST real pendientes | Líneas inmutables y validadas en esquema propio proyectado |
+| Detalle Boleta | Quinto Spring Boot integrado PR #25, CI H2/MockMvc PASS (9 tests); MySQL y React pendientes; HTTP/H2 PASS PR #27 | Líneas inmutables y validadas en esquema propio proyectado |
 
 ## Contrato ejecutable nuevo en Productos
 
@@ -42,13 +42,13 @@ La edición administrativa no puede sobrescribir stock ni eliminar producto dura
 
 ## Invariante para la extracción posterior
 
-El servicio backend/pedidos ya registra intención local antes de PUT, persiste el pedido cuando recibe snapshot y consulta GET tras timeout con el mismo UUID. **No hay transacción distribuida**. El siguiente corte debe añadir recuperación periódica de intenciones abandonadas y compensación/expiración segura; no cancelar automáticamente cuando el commit remoto/local es ambiguo. Antes de cambiar rutas se requieren E2E, pruebas de concurrencia y MySQL.
+El servicio backend/pedidos ya registra intención local antes de PUT, persiste el pedido cuando recibe snapshot y consulta GET tras timeout con el mismo UUID. **No hay transacción distribuida**. PR #26 implementó reconciliación y compensación de intenciones **desactivadas por defecto**; falta validar fallos de red y MySQL antes de activarlas. Antes de cambiar rutas se requieren E2E, pruebas de concurrencia y MySQL.
 
 Los servicios Boleta y Detalle Boleta deben validar existencia de pedido y copiar precios de snapshots autorizados, nunca de campos libres del cliente. Los ZIP del compañero contienen API CRUD aprovechable, pero Boleta trae credencial literal y ambos carecen de JWT: no trasladar secretos ni publicar esas APIs sin seguridad.
 
 ## Límites de verificación
 
-Tests MockMvc/H2 y CI comprueban los contratos de Productos y el nuevo proceso Pedidos con gateway remoto simulado. No se ha ejecutado MySQL real ni un cliente remoto entre procesos, ni se ha probado la emisión del token de servicio en ejecución distribuida o los recorridos completos de navegador. Esto corresponde al último corte acordado para MySQL, o a futuras misiones para el resto.
+Tests MockMvc/H2 y CI comprueban los contratos de Productos y el nuevo proceso Pedidos con gateway remoto simulado. PR #27 verificó clientes HTTP entre cinco procesos Spring reales y JWT de servicio sobre H2 separadas. No hay MySQL real ni recorridos completos de navegador, fallos inducidos o despliegue. Esto corresponde al último corte acordado para MySQL, o a futuras misiones para el resto.
 
 Auditoría y seguimiento: https://github.com/dante1603/Huerto_Hogar_2/issues/19
 
@@ -68,10 +68,10 @@ El módulo `backend/pedidos` constituye un **tercer proceso Spring Boot** con ba
 
 La implementación usa **JWT interno efímero** con rol `SERVICIO_PEDIDOS` y firma HMAC compartida en el MVP local, **sin exponerlo a React**. Antes de producción usar firma asimétrica/mTLS y credenciales segregadas; una clave simétrica compartida permite emitir otros roles si se compromete.
 
-La CI ahora incluye tests MockMvc/H2 del tercer servicio con gateway de Productos simulado. No valida un enlace REST físico ni una BD MySQL real. En el último corte hay que configurar el tercer esquema, puertos y rutas proxy para el cambio de tráfico, más E2E completos.
+La CI ahora incluye tests MockMvc/H2 del tercer servicio con gateway de Productos simulado. PR #27 valida un enlace HTTP físico sobre H2, no una BD MySQL real. En el último corte hay que configurar el tercer esquema, puertos y rutas proxy para el cambio de tráfico, más E2E completos.
 
 
-## Corte Boleta (PR #23 integrada en rama de integración; red real pendiente)
+## Corte Boleta (PR #23 integrada; HTTP real/H2 comprobado en PR #27)
 
 El cuarto proceso `backend/boleta` es una adaptación segura del ZIP del compañero: solo `POST /api/v1/boletas` (JWT CLIENTE, `{pedidoId}`) y `GET /api/v1/boletas/{id}` (propietario o staff). El servicio verifica el pedido `PENDIENTE` con su dueño (`backend/pedidos`) utilizando REST y el JWT del cliente; no confía en usuario, precios ni importes suministrados por React. El comprobante ficticio es inmutable, no representa pago ni boleta SII; UNIQUE(pedido_id) impide duplicar emisiones. No se activan rutas React, no se tocan esquemas MySQL y Detalle Boleta sigue fuera de integración.
 
@@ -80,7 +80,7 @@ El cuarto proceso `backend/boleta` es una adaptación segura del ZIP del compañ
 
 `backend/detalle-boleta` implementa `POST /api/v1/detalles-boleta` con solo `{boletaId}`, GET por línea o por boleta, JWT CLIENTE propietario/roles de lectura. Consulta Boleta (propietaria de la cabecera) y Pedidos (propietario del snapshot del pedido) por REST con JWT delegado; rechaza cifras suministradas por frontend, comprobantes ajenos y cualquier diferencia entre importes.
 
-La escritura de todas las líneas se realiza bajo una transacción local y `UNIQUE(id_boleta,numero_linea)` evita líneas duplicadas. Una carrera se resuelve releyendo la ganadora; los documentos no se pueden editar ni eliminar. **No hay transacciones distribuidas ni E2E real**, y no se activó React ni MySQL. El uso de JWT delegado y la firma simétrica compartida son compromisos de laboratorio, no una postura definitiva de despliegue.
+La escritura de todas las líneas se realiza bajo una transacción local y `UNIQUE(id_boleta,numero_linea)` evita líneas duplicadas. Una carrera se resuelve releyendo la ganadora; los documentos no se pueden editar ni eliminar. **E2E HTTP sobre H2 PASS en PR #27; no hay transacción global ni E2E MySQL/navegador**, y React no cambió. El uso de JWT delegado y la firma simétrica compartida son compromisos de laboratorio, no una postura definitiva de despliegue.
 
 
 ## Compensación de intenciones abandonadas: código opt-in (corte siguiente)
@@ -88,3 +88,8 @@ La escritura de todas las líneas se realiza bajo una transacción local y `UNIQ
 La recuperación automática anterior a MySQL está **desactivada por defecto**. `INICIADO` con más de 60 minutos puede entrar a `CANCELANDO` con una transición local transaccional antes de ejecutar DELETE idempotente de Productos. El estado `CANCELADO` solo se persiste **después** de HTTP 204; un timeout deja `CANCELANDO` y reintenta con la misma referencia. `confirmar()` rechaza pedidos en cancelación, evitando pedidos confirmados con stock ya repuesto. Tras cancelar, el cliente necesita otra Idempotency-Key; no se intenta re-reservar ni publicar un pedido ficticio.
 
 Activación manual tras E2E de red/concurrencia y MySQL: `RECONCILIACION_HABILITADA=true`, `RECONCILIACION_CADUCIDAD_MINUTOS=60` (mínimo efectivo un minuto). **No afirmar seguridad distribuida total** antes de validar situaciones de caída, carrera y timeouts en procesos reales. El reconciliador no es una saga comercial completa ni prueba de pago.
+
+
+## Verificación HTTP transversal — PR #27
+
+[GitHub Actions 43668577173](https://github.com/dante1603/Huerto_Hogar_2/actions/runs/43668577173) acreditó 71/71 tests y circuito REST entre cinco procesos/H2 independientes: JWT, reservas reales, Boleta y Detalle consistentes, reintentos sin duplicación y validación multicliente. La corrección a `DispatcherType.ERROR` evita enmascarar conflictos 409 y errores 404 como 403. Ver `docs/VERIFICACION_HTTP_EP3.md`. **No activar reconciliador ni cambiar proxy React hasta completar MySQL, escenarios de fallo y QA visual.**

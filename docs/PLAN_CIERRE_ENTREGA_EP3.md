@@ -40,4 +40,9 @@ PR #12 CRUD, #13 rutas por rol, #14 protección de pedidos, #16 refresh JWT y #1
 
 ## Alcance del docente: cinco microservicios independientes
 
-Confirmado por Dante: Usuarios, Productos, Pedidos, Boleta, Detalle Boleta. Existen cuatro procesos Spring Boot en la rama de integracion: Usuarios, Catalogo/Productos, Pedidos (PR #21) y Boleta (PR #23). React aún consume Pedidos legado de Catalogo; la saga distribuida no esta cerrada. Boleta ya valida via REST el pedido confirmado y crea un comprobante ficticio único, no tributario; no se ha probado la red entre procesos. Siguiente corte: endurecer e integrar Detalle Boleta como quinto servicio y asegurar su contrato con snapshots de Pedidos/Boleta. MySQL real permanece diferido hasta la validacion final.
+Confirmado por Dante: Usuarios, Productos, Pedidos, Boleta, Detalle Boleta. Existen cinco procesos Spring Boot en la rama de integración: Usuarios, Productos, Pedidos, Boleta y Detalle Boleta (PR #25). React aún consume Pedidos legado de Catalogo; la saga distribuida no esta cerrada. Boleta ya valida via REST el pedido confirmado y crea un comprobante ficticio único, no tributario; se probó la red real entre los cinco procesos sobre H2 en PR #27. Siguiente corte: MySQL/persistencia, fallos de red, React y QA de navegador. MySQL real permanece diferido hasta la validacion final.
+
+
+### Estado posterior a PR #27
+
+[GitHub Actions 43668577173](https://github.com/dante1603/Huerto_Hogar_2/actions/runs/43668577173): cinco aplicaciones Java lanzadas con H2 separadas y HTTP real, 71/71 tests más contrato de compra y comprobantes PASS. MySQL auténtico, E2E React y evidencias institucionales siguen pendientes. Reconciliación automática sigue desactivada.
