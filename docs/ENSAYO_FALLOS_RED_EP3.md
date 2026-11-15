@@ -26,3 +26,7 @@ E2E_RECONCILIACION=1 python3 scripts/e2e_http_fullstack.py
 Comprobar logs y SHA del run antes de declarar PASS; el documento no constituye evidencia por sí mismo.
 
 **Optimización CI:** empaquetado y circuito HTTP de fallos se ejecutan antes de la suite 71 tests para detectar y corregir errores de transporte temprano; la PR solo tendrá PASS completo si ambos tramos terminan en verde.
+
+### Rigor del caso DELETE
+
+El cliente HTTP de Java puede reintentar una petición DELETE dentro de **la misma llamada**. Para acreditar recuperación entre rondas del reconciliador, el proxy corta **ambas respuestas** de DELETE tras ejecutar el upstream. El ensayo exige **al menos tres DELETE** para la misma intención: dos respuestas perdidas y una respuesta posterior que confirma la cancelación. El servidor de Productos usa un tombstone, por lo que no devuelve stock dos veces. El programador continúa habilitado solo durante la prueba efímera.

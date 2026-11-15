@@ -247,6 +247,10 @@ def prueba_fallos(proxy):
     if os.environ.get("E2E_RECONCILIACION") == "1":
         # Una respuesta DELETE se pierde despues de restituir el stock.
         # El siguiente intervalo debe repetir el DELETE sobre su tombstone.
+        # Java reintenta DELETE transparentemente una vez antes de lanzar
+        # excepcion. Perder ambas respuestas obliga al scheduler a reintentar
+        # en una iteracion POSTERIOR, no solo dentro del cliente HTTP.
+        proxy.inject("DELETE", DROP_AFTER)
         proxy.inject("DELETE", DROP_AFTER)
 
     print("[RACE] Seis POST simultaneos con la misma Idempotency-Key",
@@ -302,8 +306,8 @@ def prueba_fallos(proxy):
                   + str(code))
             check(time.monotonic() < limite, "Compensacion no finalizo tras DELETE perdido")
             time.sleep(1)
-        check(proxy.count("DELETE") >= 2 and proxy.injected("DELETE", DROP_AFTER) == 1,
-              "No se reintento DELETE tras respuesta perdida")
+        check(proxy.count("DELETE") >= 3 and proxy.injected("DELETE", DROP_AFTER) == 2,
+              "No se reintento DELETE en otra iteracion tras dos respuestas perdidas")
         actual = {p["id"]: p["stock"] for p in expect(8080, "GET", "/api/v1/productos", 200)}
         check(actual[mineral["id"]] == stock_mineral - 2,
               "Compensacion repuso stock cero o mas de una vez")
