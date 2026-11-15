@@ -50,7 +50,7 @@ En esta etapa se completó la migración del frontend React (`frontend/tienda`) 
 ## 3. Pruebas Automatizadas y de Navegador
 
 ### 3.1 Suite Unitaria Frontend (`npm test`)
-- 29 pruebas ejecutadas y aprobadas al 100% (incluyendo pruebas unitarias para los endpoints independientes de Pedidos, Boleta y Detalle Boleta).
+- 30 pruebas ejecutadas y aprobadas al 100% (incluyendo pruebas para recuperación de comprobante incompleto, endpoints independientes de Pedidos, Boleta y Detalle Boleta).
 - `npm run build` genera el bundle de producción sin advertencias ni errores.
 
 ### 3.2 Prueba E2E Automatizada con MySQL 8.4 (`scripts/verify_react_mysql_ep3.py`)
@@ -95,3 +95,30 @@ Las capturas tomadas durante la ejecución en navegador real se encuentran archi
 - Reconciliación automática permanece deshabilitada (`RECONCILIACION_HABILITADA=false`).
 - Base de datos MySQL 8.4 conservó intactos los datos y esquemas preexistentes.
 - `main` no fue alterado; el corte se entrega en rama `feat/react-pedidos-independiente-2026-11-15` lista para PR hacia `integration/fullstack-2026-11-14`.
+
+---
+
+## 6. Correcciones de Auditoría (Revisión de Anam en PR #31)
+
+En atención a las observaciones técnicas realizadas por Anam en la PR #31, se implementaron las siguientes mejoras y pruebas de regresión:
+
+1. **Aislamiento de Productos de Prueba E2E (`scripts/verify_react_mysql_ep3.py`)**:
+   - Se implementó aprovisionamiento efímero de un usuario administrador y elevación controlada en MySQL (`huertohogar_usuarios.usuario`).
+   - Se crea dinámicamente un producto aislado con SKU `REACT-E2E-{run_id}` para realizar la orden de prueba.
+   - Se realiza un snapshot previo del inventario compartido y se verifica que todos los SKUs preexistentes conserven su stock intacto tras la compra.
+   - Al finalizar, se revocan las credenciales del administrador efímero.
+
+2. **Protección contra Reutilización de PIDs (`scripts/manage_local_services.py`)**:
+   - Registro de metadato `jar_name` en `.active_microservices_pids.json`.
+   - Implementación de `get_process_command_line(pid)` e inspección de identidad en `verify_process_identity(pid, expected_jar)` antes de emitir cualquier terminación de proceso (`taskkill` o `SIGTERM`).
+   - Si el proceso en ejecución no es Java o no corresponde al JAR esperado, la terminación se aborta inmediatamente emitiendo una advertencia de seguridad.
+   - Suite unitaria `scripts/test_manage_services.py` con 6 casos de prueba (rechazo de PIDs reutilizados por otros procesos, PIDs inexistentes, mock de terminación segura).
+
+3. **Restauración de Reproducibilidad del Frontend**:
+   - Se eliminaron las reglas `.gitignore` que ignoraban `package-lock.json` y `**/package-lock.json`.
+   - Se versionó `frontend/tienda/package-lock.json` para garantizar compilaciones e instalaciones deterministas en CI y entornos de prueba.
+
+4. **Estado de Comprobante Incompleto y Reintento Seguro (`PedidoDetalle.jsx`)**:
+   - Cuando el servicio Boleta (:8083) responde favorablemente pero Detalle Boleta (:8084) falla o no retorna líneas, la interfaz despliega un aviso explícito: *"Comprobante incompleto"* en lugar de afirmar erróneamente "0 líneas verificadas".
+   - Se provee el botón *"Reintentar generación de detalle"*, el cual reintenta invocar exclusivamente `generarDetalleBoleta` usando el `boletaId` ya emitido, preservando la idempotencia y evitando duplicar la boleta.
+   - Prueba unitaria añadida en `frontend/tienda/src/lib/api.test.js` validando la recuperación sin duplicidad.

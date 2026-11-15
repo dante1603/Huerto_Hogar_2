@@ -135,3 +135,56 @@ test('pedidos independiente, boleta y detalle boleta usan sus respectivos endpoi
     globalThis.fetch = previous
   }
 })
+
+test('recuperación de comprobante incompleto: boleta existente permite reintentar detalle sin duplicar boleta', async () => {
+  const { emitirBoleta, generarDetalleBoleta } = await import('./api.js')
+  const previous = globalThis.fetch
+  let detalleFallo = true
+  const postBoletaCalls = []
+  const postDetalleCalls = []
+
+  globalThis.fetch = async (url, options) => {
+    if (url.includes('/api/v1/boletas')) {
+      postBoletaCalls.push({ url, options })
+      return new Response(JSON.stringify({ id: 99, pedidoId: 7, total: 500, moneda: 'GALATICOINS' }), {
+        status: 201, headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    if (url.includes('/api/v1/detalles-boleta')) {
+      postDetalleCalls.push({ url, options })
+      if (detalleFallo) {
+        return new Response(JSON.stringify({ message: 'Error transitorio en Detalle Boleta :8084' }), {
+          status: 503, headers: { 'Content-Type': 'application/json' }
+        })
+      }
+      return new Response(JSON.stringify([{ id: 101, boletaId: 99, numeroLinea: 1, totalVenta: 500 }]), {
+        status: 201, headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    return new Response(null, { status: 404 })
+  }
+
+  try {
+    // 1. Emitir boleta tiene éxito
+    const boleta = await emitirBoleta(7, 'token-jwt')
+    assert.equal(boleta.id, 99)
+    assert.equal(postBoletaCalls.length, 1)
+
+    // 2. Generar detalle falla en primer intento (estado comprobante incompleto)
+    await assert.rejects(
+      async () => await generarDetalleBoleta(boleta.id, 'token-jwt'),
+      /Servicio temporalmente no disponible/
+    )
+    assert.equal(postDetalleCalls.length, 1)
+
+    // 3. Reintento de detalle reutiliza boleta.id sin llamar a emitirBoleta de nuevo
+    detalleFallo = false
+    const lineas = await generarDetalleBoleta(boleta.id, 'token-jwt')
+    assert.equal(lineas.length, 1)
+    assert.equal(lineas[0].boletaId, 99)
+    assert.equal(postBoletaCalls.length, 1, 'No se debe volver a emitir la boleta al reintentar solo el detalle')
+    assert.equal(postDetalleCalls.length, 2, 'Se debió realizar el segundo intento a detalles-boleta')
+  } finally {
+    globalThis.fetch = previous
+  }
+})

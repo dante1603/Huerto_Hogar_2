@@ -47,6 +47,20 @@ export default function PedidoDetalle({ session }) {
     }
   }
 
+  async function reintentarDetalle() {
+    if (!boleta || cargandoComprobante || !session?.accessToken) return
+    setCargandoComprobante(true)
+    setErrorComprobante('')
+    try {
+      const lineas = await generarDetalleBoleta(boleta.id, session.accessToken)
+      setDetalles(Array.isArray(lineas) ? lineas : [])
+    } catch (cause) {
+      setErrorComprobante(cause.message || 'No se pudo generar el detalle de la boleta.')
+    } finally {
+      setCargandoComprobante(false)
+    }
+  }
+
   const esPropietario = session?.rolUsuario === 'CLIENTE'
 
   return <section>
@@ -114,30 +128,47 @@ export default function PedidoDetalle({ session }) {
               </div>
 
               <div style={{ marginTop: '16px', borderTop: '1px solid #dce3d6', paddingTop: '12px' }}>
-                <h4 style={{ margin: '0 0 8px 0', fontSize: '14px' }}>Líneas de Detalle Verificadas ({detalles.length})</h4>
                 {detalles.length === 0 ? (
-                  <p className="small">No se registraron líneas de detalle.</p>
+                  <div className="panel" role="status" style={{ background: '#fff9e6', border: '1px solid #f0d075', padding: '12px', borderRadius: '4px' }}>
+                    <h4 style={{ margin: '0 0 6px 0', fontSize: '14px', color: '#856404' }}>Comprobante incompleto</h4>
+                    <p className="small" style={{ margin: '0 0 10px 0', color: '#665103' }}>
+                      La boleta #{boleta.id} fue emitida en el servicio Boleta (:8083), pero sus líneas de detalle aún no han sido registradas o verificadas en Detalle Boleta (:8084).
+                    </p>
+                    <button
+                      type="button"
+                      className="button button-primary"
+                      onClick={reintentarDetalle}
+                      disabled={cargandoComprobante}
+                    >
+                      {cargandoComprobante ? 'Generando líneas…' : 'Reintentar generación de detalle'}
+                    </button>
+                  </div>
                 ) : (
-                  <ul className="order-items" style={{ margin: 0 }}>
-                    {detalles.map((linea) => (
-                      <li key={linea.id || linea.numeroLinea}>
-                        Línea #{linea.numeroLinea}: {linea.nombreProducto} (ID #{linea.productoId}) — {linea.cantidadProducto} × {formatGalatiCoins(linea.precioUnitario)} = <strong>{formatGalatiCoins(linea.totalVenta)}</strong>
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '14px' }}>Líneas de Detalle Verificadas ({detalles.length})</h4>
+                    <ul className="order-items" style={{ margin: 0 }}>
+                      {detalles.map((linea) => (
+                        <li key={linea.id || linea.numeroLinea}>
+                          Línea #{linea.numeroLinea}: {linea.nombreProducto} (ID #{linea.productoId}) — {linea.cantidadProducto} × {formatGalatiCoins(linea.precioUnitario)} = <strong>{formatGalatiCoins(linea.totalVenta)}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
                 )}
               </div>
 
-              <div style={{ marginTop: '16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  className="button button-quiet"
-                  onClick={obtenerComprobanteAcademico}
-                  disabled={cargandoComprobante}
-                >
-                  {cargandoComprobante ? 'Actualizando…' : 'Reverificar comprobante'}
-                </button>
-              </div>
+              {detalles.length > 0 && (
+                <div style={{ marginTop: '16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className="button button-quiet"
+                    onClick={obtenerComprobanteAcademico}
+                    disabled={cargandoComprobante}
+                  >
+                    {cargandoComprobante ? 'Actualizando…' : 'Reverificar comprobante'}
+                  </button>
+                </div>
+              )}
 
               <p className="small" style={{ marginTop: '14px', fontStyle: 'italic', color: '#556b57' }}>
                 Aviso académico: Comprobante registrado en la base de datos `huertohogar_boleta` y líneas en `huertohogar_detalle_boleta`. Simulación docente de facturación sin valor fiscal.

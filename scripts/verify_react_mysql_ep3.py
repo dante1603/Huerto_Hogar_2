@@ -117,19 +117,55 @@ def run_e2e():
     run_id = secrets.token_hex(4)
     print(f"=== INICIANDO VALIDACIÓN E2E VITE + MYSQL (Run ID: {run_id}) ===", flush=True)
 
-    # 1. Catálogo inicial vía proxy Vite
+    # 1. Catálogo inicial vía proxy Vite y snapshot de inventario compartido
     status, productos = http("GET", "/api/v1/productos")
     check(status == 200, "Vite proxy GET /api/v1/productos responde 200")
     check(isinstance(productos, list) and len(productos) > 0, "Catálogo tiene productos disponibles")
+    stock_previo_compartido = {p["sku"]: p["stock"] for p in productos}
+    print(f"    Snapshot de inventario compartido registrado ({len(stock_previo_compartido)} SKUs existentes)", flush=True)
 
-    # Seleccionar producto con stock suficiente
-    cand = [p for p in productos if p["stock"] >= 5]
-    check(len(cand) >= 1, "Hay al menos un producto con stock suficiente para la prueba")
-    prod = cand[0]
+    # 1.1 Aislamiento de prueba: provisionar Administrador efímero y producto dinámico REACT-E2E-{run_id}
+    admin_email = f"admin.e2e.{run_id}@huertohogar.test"
+    admin_password = f"Admin.{run_id}.Secure!1"
+    admin_rut = rut_valido(16000000 + secrets.randbelow(999999))
+    status, admin_reg = http("POST", "/usuarios-api/api/v1/usuarios", payload={
+        "nombreUsuario": f"Admin E2E {run_id}",
+        "emailUsuario": admin_email,
+        "contrasena": admin_password,
+        "rutUsuario": admin_rut,
+        "direccionUsuario": "Sede Administrativa HuertoHogar"
+    })
+    check(status == 201, f"Registro de administrador efímero exitoso: {admin_email}")
+    admin_id = admin_reg.get("idUsuario") or admin_reg.get("id")
+
+    # Elevar rol a ADMINISTRADOR en base de datos MySQL real
+    mysql_exec(f"UPDATE huertohogar_usuarios.usuario SET rol_usuario = 'ADMINISTRADOR' WHERE id_usuario = {admin_id};")
+
+    # Autenticar como ADMINISTRADOR para obtener JWT con permisos de creación de productos
+    status, admin_login = http("POST", "/usuarios-api/api/v1/auth/login", payload={
+        "email": admin_email,
+        "contrasena": admin_password
+    })
+    check(status == 200, "Login de administrador efímero exitoso (200)")
+    admin_jwt = admin_login["accessToken"]
+    check(admin_jwt and len(admin_jwt) > 20, "JWT de administrador obtenido")
+
+    # Crear producto dinámico aislado para el ensayo E2E
+    sku_dinamico = f"REACT-E2E-{run_id}".upper()
+    stock_inicial = 10
+    precio_unitario = 150
+    prod_payload = {
+        "sku": sku_dinamico,
+        "nombre": f"Cultivo Aislado E2E {run_id}",
+        "descripcion": "Producto efímero de prueba aislada para no consumir inventario preexistente.",
+        "precio": precio_unitario,
+        "stock": stock_inicial,
+        "planetaOrigen": "Bruma"
+    }
+    status, prod = http("POST", "/api/v1/productos", token=admin_jwt, payload=prod_payload)
+    check(status == 201, f"Producto de prueba aislado creado en Catálogo (201): SKU {sku_dinamico}, ID {prod.get('id')}")
     prod_id = prod["id"]
-    stock_inicial = prod["stock"]
-    precio_unitario = prod["precio"]
-    print(f"    Producto seleccionado: {prod['nombre']} (ID: {prod_id}, Stock: {stock_inicial}, Precio: ${precio_unitario})", flush=True)
+    print(f"    Producto aislado listo: {prod['nombre']} (ID: {prod_id}, Stock: {stock_inicial}, Precio: ${precio_unitario})", flush=True)
 
     # 2. Registro de Cliente 1 vía proxy Vite
     email1 = f"cliente.react.{run_id}@huertohogar.test"
@@ -305,6 +341,21 @@ def run_e2e():
     det_row = mysql_exec(sql_det).split()
     check(len(det_row) >= 6 and int(det_row[1]) == boleta_id and int(det_row[3]) == prod_id and int(det_row[4]) == cantidad_compra,
           f"Detalle de boleta verificado en huertohogar_detalle_boleta: {det_row}")
+
+    # 15. Verificación de aislamiento estricto: inventario compartido preexistente intacto
+    print("[*] Verificando que ningún producto preexistente haya sufrido descuento de inventario...", flush=True)
+    status, productos_finales = http("GET", "/api/v1/productos")
+    check(status == 200, "Consulta de inventario post-ejecución responde 200")
+    stock_final_map = {p["sku"]: p["stock"] for p in productos_finales}
+    for sku_prev, stock_prev in stock_previo_compartido.items():
+        stock_post = stock_final_map.get(sku_prev)
+        check(stock_post == stock_prev,
+              f"Stock compartido de SKU '{sku_prev}' inalterado ({stock_prev} -> {stock_post})")
+    print(f"[+] Verificado: los {len(stock_previo_compartido)} SKUs preexistentes conservan su inventario exacto.", flush=True)
+
+    # 16. Revocación de credenciales del administrador efímero en MySQL
+    mysql_exec(f"UPDATE huertohogar_usuarios.usuario SET rol_usuario = 'CLIENTE', contrasena_usuario = 'REVOCADO_INACTIVO' WHERE id_usuario = {admin_id};")
+    print(f"[+] Credenciales del administrador efímero {admin_email} revocadas en huertohogar_usuarios.", flush=True)
 
     print(f"\n[+++] VALIDACIÓN E2E DE REACT CON 5 MICROSERVICIOS Y MYSQL 8.4: EXITOSA [+++]", flush=True)
 

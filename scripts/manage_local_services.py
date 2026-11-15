@@ -139,7 +139,12 @@ def start_services():
             stderr=out_f,
             creationflags=flags
         )
-        managed_pids.append({"name": name, "pid": proc.pid, "port": env_vars.get("PORT") or env_vars.get("SERVER_PORT")})
+        managed_pids.append({
+            "name": name,
+            "pid": proc.pid,
+            "port": env_vars.get("PORT") or env_vars.get("SERVER_PORT"),
+            "jar_name": Path(jar_rel).name
+        })
         print(f"    Lanzado {name} (PID: {proc.pid})", flush=True)
 
     with open(PID_FILE, "w", encoding="utf-8") as f:
@@ -163,10 +168,89 @@ def start_services():
     print("[+] Los 5 microservicios están en línea y saludables.", flush=True)
 
 
+def get_process_command_line(pid):
+    """
+    Obtiene la línea de comando asociada a un PID de forma segura y multiplataforma.
+    Retorna cadena vacía si el proceso no existe o no se puede inspeccionar.
+    """
+    try:
+        pid = int(pid)
+    except (TypeError, ValueError):
+        return ""
+
+    if os.name == "nt":
+        try:
+            cmd = [
+                "powershell",
+                "-NoProfile",
+                "-Command",
+                f"(Get-CimInstance Win32_Process -Filter 'ProcessId = {pid}').CommandLine"
+            ]
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+            if res.returncode == 0 and res.stdout:
+                return res.stdout.strip()
+        except Exception:
+            return ""
+    else:
+        cmdline_file = Path(f"/proc/{pid}/cmdline")
+        if cmdline_file.exists():
+            try:
+                return cmdline_file.read_text(encoding="utf-8", errors="replace").replace("\x00", " ")
+            except Exception:
+                return ""
+    return ""
+
+
+def verify_process_identity(pid, expected_jar):
+    """
+    Valida que el PID pertenezca efectivamente a una instancia de Java ejecutando
+    el archivo JAR esperado (p. ej. 'catalogo-service-0.1.0-SNAPSHOT.jar'), evitando
+    terminar procesos ajenos por reutilización de PID.
+    """
+    if not pid or not expected_jar:
+        return False
+    cmdline = get_process_command_line(pid)
+    if not cmdline:
+        return False
+
+    cmd_lower = cmdline.lower()
+    expected_lower = str(expected_jar).lower()
+
+    is_java = "java" in cmd_lower
+    has_jar = expected_lower in cmd_lower or Path(expected_lower).name.lower() in cmd_lower
+    return is_java and has_jar
+
+
 def stop_pids(pids_data):
     for entry in pids_data:
-        pid = entry["pid"] if isinstance(entry, dict) else entry
-        name = entry.get("name", str(pid)) if isinstance(entry, dict) else str(pid)
+        if isinstance(entry, dict):
+            pid = entry.get("pid")
+            name = entry.get("name", str(pid))
+            jar_name = entry.get("jar_name")
+        else:
+            pid = entry
+            name = str(pid)
+            jar_name = None
+
+        if not pid:
+            continue
+
+        if not check_process_alive(pid):
+            print(f"    Proceso {name} (PID: {pid}) ya no se encuentra activo.", flush=True)
+            continue
+
+        # Protección contra reutilización de PID
+        if jar_name:
+            if not verify_process_identity(pid, jar_name):
+                print(
+                    f"    [!] ADVERTENCIA DE SEGURIDAD: El PID {pid} registrado para '{name}' no corresponde "
+                    f"al JAR esperado '{jar_name}'. Posible reutilización de PID por otro proceso del sistema. "
+                    f"Operación de terminación abortada para este PID.",
+                    file=sys.stderr,
+                    flush=True
+                )
+                continue
+
         try:
             if os.name == "nt":
                 subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True)
@@ -213,9 +297,13 @@ def daemon_services():
         print("[*] Modo daemon activo. Presiona Ctrl+C o termina la tarea para detener.", flush=True)
         while True:
             time.sleep(2)
-            # Verificar si algún proceso cayó inesperadamente
-            with open(PID_FILE, "r", encoding="utf-8") as f:
-                pids_data = json.load(f)
+            if not PID_FILE.exists():
+                break
+            try:
+                with open(PID_FILE, "r", encoding="utf-8") as f:
+                    pids_data = json.load(f)
+            except Exception:
+                break
             for entry in pids_data:
                 pid = entry["pid"]
                 name = entry["name"]

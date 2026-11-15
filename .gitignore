@@ -12,7 +12,5 @@
 **/*.log
 **/*.json.tmp
 .active_microservices_pids.json
-package-lock.json
-**/package-lock.json
 **/__pycache__/
 *.py[cod]
