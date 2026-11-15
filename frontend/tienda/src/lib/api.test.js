@@ -51,3 +51,87 @@ test('renovar y revocar usan el backend Usuarios y tratan 204 sin respuesta JSON
     globalThis.fetch = previous
   }
 })
+
+test('pedidos independiente, boleta y detalle boleta usan sus respectivos endpoints y cabeceras', async () => {
+  const {
+    crearPedido, consultarPedidos, consultarPedido,
+    emitirBoleta, consultarBoleta, generarDetalleBoleta, consultarDetalleBoleta
+  } = await import('./api.js')
+  const previous = globalThis.fetch
+  const calls = []
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url, options })
+    if (url.includes('/api/v1/boletas/10')) {
+      return new Response(JSON.stringify({ id: 10, pedidoId: 5, total: 240, moneda: 'GALATICOINS' }), {
+        status: 200, headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    if (url.includes('/api/v1/boletas')) {
+      return new Response(JSON.stringify({ id: 10, pedidoId: 5, total: 240, moneda: 'GALATICOINS' }), {
+        status: 201, headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    if (url.includes('/api/v1/detalles-boleta/boleta/10')) {
+      return new Response(JSON.stringify([{ id: 1, boletaId: 10, numeroLinea: 1, totalVenta: 240 }]), {
+        status: 200, headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    if (url.includes('/api/v1/detalles-boleta')) {
+      return new Response(JSON.stringify([{ id: 1, boletaId: 10, numeroLinea: 1, totalVenta: 240 }]), {
+        status: 201, headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    if (url.includes('/api/v1/pedidos/mios')) {
+      return new Response(JSON.stringify([{ id: 5, total: 240 }]), {
+        status: 200, headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    if (url.includes('/api/v1/pedidos/5')) {
+      return new Response(JSON.stringify({ id: 5, estado: 'PENDIENTE', total: 240 }), {
+        status: 200, headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    return new Response(JSON.stringify({ id: 5, estado: 'PENDIENTE' }), {
+      status: 201, headers: { 'Content-Type': 'application/json' }
+    })
+  }
+
+  try {
+    const p = await crearPedido({ planetaDestino: 'Bruma', productos: [{ productoId: 1, cantidad: 2 }] }, 'token-jwt', 'idem-uuid')
+    assert.equal(p.id, 5)
+    assert.equal(calls[0].options.headers['Idempotency-Key'], 'idem-uuid')
+    assert.equal(calls[0].options.headers.Authorization, 'Bearer token-jwt')
+    assert.ok(calls[0].url.endsWith('/api/v1/pedidos'))
+
+    const mios = await consultarPedidos('token-jwt', 'CLIENTE')
+    assert.equal(mios.length, 1)
+    assert.ok(calls[1].url.endsWith('/api/v1/pedidos/mios'))
+
+    const pend = await consultarPedidos('token-jwt', 'ADMINISTRADOR')
+    assert.ok(calls[2].url.endsWith('/api/v1/pedidos/pendientes'))
+
+    const det = await consultarPedido(5, 'token-jwt')
+    assert.equal(det.id, 5)
+    assert.ok(calls[3].url.endsWith('/api/v1/pedidos/5'))
+
+    const b = await emitirBoleta(5, 'token-jwt')
+    assert.equal(b.id, 10)
+    assert.ok(calls[4].url.endsWith('/api/v1/boletas'))
+    assert.equal(JSON.parse(calls[4].options.body).pedidoId, 5)
+
+    const bConsulta = await consultarBoleta(10, 'token-jwt')
+    assert.equal(bConsulta.id, 10)
+    assert.ok(calls[5].url.endsWith('/api/v1/boletas/10'))
+
+    const d = await generarDetalleBoleta(10, 'token-jwt')
+    assert.equal(d.length, 1)
+    assert.ok(calls[6].url.endsWith('/api/v1/detalles-boleta'))
+    assert.equal(JSON.parse(calls[6].options.body).boletaId, 10)
+
+    const dConsulta = await consultarDetalleBoleta(10, 'token-jwt')
+    assert.equal(dConsulta.length, 1)
+    assert.ok(calls[7].url.endsWith('/api/v1/detalles-boleta/boleta/10'))
+  } finally {
+    globalThis.fetch = previous
+  }
+})
