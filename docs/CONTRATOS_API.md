@@ -12,6 +12,8 @@ Todos los servicios usan JSON y prefijo `/api/v1`. Esta tabla distingue expresam
 | `/api/v1/usuarios` | POST | usuarios | Registro público CLIENTE; sin asignación de rol privilegiado |
 | `/api/v1/usuarios/{id}` | GET | usuarios | Implementado: Bearer JWT, solo propietario o ADMINISTRADOR |
 | `/api/v1/auth/login` | POST | usuarios | Implementado: valida BCrypt y emite JWT HS256 de 30 minutos |
+| `/api/v1/auth/refresh` | POST | usuarios | Rota token de renovación opaco de un solo uso, reemite JWT (24 h máximo de refresh) |
+| `/api/v1/auth/logout` | POST | usuarios | Revoca refresh token, respuesta 204 sin revelar su existencia |
 | `/api/v1/pedidos` | POST | Catálogo | MVP: CLIENTE JWT, reserva transaccional, Idempotency-Key UUID |
 | `/api/v1/pedidos/mios` | GET | Catálogo | Pedidos del CLIENTE autenticado |
 | `/api/v1/pedidos/pendientes` | GET | Catálogo | VENDEDOR/ADMINISTRADOR (solo lectura) |
@@ -50,3 +52,9 @@ No acoplar el frontend directamente a MySQL ni dar acceso privilegiado a tokens 
 El catálogo mantiene lectura pública. Las escrituras requieren JWT `ADMINISTRADOR` y no pueden iniciarse con una cuenta CLIENTE o VENDEDOR. El payload POST y PUT exige SKU, nombre, descripción, precio entero no negativo, stock no negativo y planeta de origen. El ID lo genera la BD.
 
 Para preservar la integridad del historial, DELETE devuelve **409** si existen líneas de pedido referidas al producto. El procedimiento de actualización usa el mismo bloqueo de fila que una reserva. Swagger está configurado en `/swagger-ui.html` y OpenAPI en `/v3/api-docs`; comprobar disponibilidad visual con servicios arrancados y MySQL real antes del cierre.
+
+## Renovación de autenticación — backend EP3
+
+Login entrega JWT HS256 (30 minutos) y refreshToken aleatorio de 256 bits (24 horas). La base Usuarios conserva **solo SHA-256** del refresh token en una nueva tabla `refresh_sesion`. POST `/api/v1/auth/refresh` exige JSON `{"refreshToken":"..."}` y rota la credencial de un solo uso en transacción con bloqueo pesimista. Reutilizar la credencial anterior produce HTTP 401. POST `/api/v1/auth/logout` revoca la credencial y responde HTTP 204 incluso si ya no existe. El JWT vigente no se revoca de inmediato: expira naturalmente a los 30 minutos (limitación del MVP).
+
+Nota: los refresh tokens son secretos y no deben mostrarse en logs, URLs ni capturas. La conexión y persistencia MySQL real aún requieren validación final; en CI se usa H2.
