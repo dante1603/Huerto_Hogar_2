@@ -104,3 +104,15 @@ export function consultarPedido(id, token) {
     headers: { Authorization: 'Bearer ' + token },
   })
 }
+
+export function renovarSesion(refreshToken) {
+  return request(usersHost + '/api/v1/auth/refresh', {
+    method: 'POST', body: JSON.stringify({ refreshToken }),
+  })
+}
+
+export function revocarSesion(refreshToken) {
+  return request(usersHost + '/api/v1/auth/logout', {
+    method: 'POST', body: JSON.stringify({ refreshToken }),
+  })
+}

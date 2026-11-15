@@ -39,10 +39,10 @@ export default function Acceso({ session, onAuthenticated, onLogout }) {
   return <section className="auth-layout">
     <div className="panel auth-panel">
       <span className="eyebrow">Estación de acceso</span>
-      {session ? <>
+      {activeRole(session) ? <>
         <h1>Sesión iniciada</h1>
         <p>Usuario #{session.idUsuario} · {session.rolUsuario}</p>
-        <p className="small">El token permanece en esta pestaña mientras la sesión esté vigente. Los permisos dependen del rol y los verifica el backend. El token no sale de esta pestaña salvo hacia las API autorizadas.</p>
+        <p className="small">El JWT de acceso se renueva mientras el token de actualización de esta pestaña siga vigente. La autorización efectiva y el control de roles permanecen en Spring Security.</p>
         <div className="product-actions"><Link className="button button-primary" to={homeForRole(activeRole(session))}>Ir a mi área</Link><button type="button" className="button button-quiet" onClick={onLogout}>Cerrar sesión</button></div>
       </> : <>
         <h1>{mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}</h1>
