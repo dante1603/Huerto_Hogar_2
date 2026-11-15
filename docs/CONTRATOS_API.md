@@ -58,3 +58,8 @@ Para preservar la integridad del historial, DELETE devuelve **409** si existen l
 Login entrega JWT HS256 (30 minutos) y refreshToken aleatorio de 256 bits (24 horas). La base Usuarios conserva **solo SHA-256** del refresh token en una nueva tabla `refresh_sesion`. POST `/api/v1/auth/refresh` exige JSON `{"refreshToken":"..."}` y rota la credencial de un solo uso en transacción con bloqueo pesimista. Reutilizar la credencial anterior produce HTTP 401. POST `/api/v1/auth/logout` revoca la credencial y responde HTTP 204 incluso si ya no existe. El JWT vigente no se revoca de inmediato: expira naturalmente a los 30 minutos (limitación del MVP).
 
 Nota: los refresh tokens son secretos y no deben mostrarse en logs, URLs ni capturas. La conexión y persistencia MySQL real aún requieren validación final; en CI se usa H2.
+
+
+## Contrato REST Productos / Pedidos (primer corte cinco microservicios)
+
+PUT/GET/DELETE /api/v1/interno/reservas/{referencia} requieren JWT SERVICIO_PEDIDOS. PUT acepta productos[{productoId,cantidad}]; crea reserva atómica (201), reintenta mismo UUID sin descontar (200), o devuelve 400/404/409. GET consulta snapshot y estado para reconciliar timeouts. DELETE compensa stock solo una vez y conserva tombstone de CANCELADA (204). Precio proviene del backend, no del navegador. Consulte docs/ARQUITECTURA_5_MICROSERVICIOS_EP3.md. **No confundir con un Pedidos independiente ya ejecutándose; aún vive dentro de Catálogo.**
