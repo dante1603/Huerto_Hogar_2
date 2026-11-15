@@ -113,6 +113,41 @@ def rut_valido(numero):
     return f"{numero}-{dv}"
 
 
+def revoke_temporary_admin(admin_id, email, password):
+    """Revoca y verifica la cuenta elevada incluso si falla la provisión."""
+    user_id = int(admin_id)
+    if user_id <= 0:
+        raise ValueError("ID de administrador temporal inválido")
+    last_error = None
+    for attempt in range(3):
+        try:
+            mysql_exec(
+                "UPDATE huertohogar_usuarios.usuario "
+                "SET rol_usuario = 'CLIENTE', contrasena_usuario = 'REVOCADO_INACTIVO' "
+                f"WHERE id_usuario = {user_id};"
+            )
+            state = mysql_exec(
+                "SELECT rol_usuario, contrasena_usuario FROM huertohogar_usuarios.usuario "
+                f"WHERE id_usuario = {user_id};"
+            ).split()
+            check(state == ["CLIENTE", "REVOCADO_INACTIVO"],
+                  "Cuenta temporal sin rol privilegiado ni contraseña utilizable")
+            status, _ = http("POST", "/usuarios-api/api/v1/auth/login", payload={
+                "email": email,
+                "contrasena": password
+            })
+            check(status == 401, "Reingreso de cuenta temporal rechazado (401)")
+            return
+        except Exception as exc:
+            last_error = exc
+            if attempt < 2:
+                time.sleep(0.5)
+    raise RuntimeError(
+        f"REVOCACIÓN NO VERIFICADA de cuenta temporal ID {user_id}. "
+        "Revocar manualmente en MySQL antes de repetir la prueba."
+    ) from last_error
+
+
 def run_e2e():
     run_id = secrets.token_hex(4)
     print(f"=== INICIANDO VALIDACIÓN E2E VITE + MYSQL (Run ID: {run_id}) ===", flush=True)
@@ -126,7 +161,7 @@ def run_e2e():
 
     # 1.1 Aislamiento de prueba: provisionar Administrador efímero y producto dinámico REACT-E2E-{run_id}
     admin_email = f"admin.e2e.{run_id}@huertohogar.test"
-    admin_password = f"Admin.{run_id}.Secure!1"
+    admin_password = secrets.token_urlsafe(24) + "Aa1!"
     admin_rut = rut_valido(16000000 + secrets.randbelow(999999))
     status, admin_reg = http("POST", "/usuarios-api/api/v1/usuarios", payload={
         "nombreUsuario": f"Admin E2E {run_id}",
@@ -136,40 +171,46 @@ def run_e2e():
         "direccionUsuario": "Sede Administrativa HuertoHogar"
     })
     check(status == 201, f"Registro de administrador efímero exitoso: {admin_email}")
-    admin_id = admin_reg.get("idUsuario") or admin_reg.get("id")
+    admin_id = int(admin_reg.get("idUsuario") or admin_reg.get("id"))
+    check(admin_id > 0, "ID de administrador temporal válido")
 
-    # Elevar rol a ADMINISTRADOR en base de datos MySQL real
-    mysql_exec(f"UPDATE huertohogar_usuarios.usuario SET rol_usuario = 'ADMINISTRADOR' WHERE id_usuario = {admin_id};")
+    # Solo elevar permisos durante la creación del fixture.
+    try:
+        # Elevar rol a ADMINISTRADOR en base de datos MySQL real
+        mysql_exec(f"UPDATE huertohogar_usuarios.usuario SET rol_usuario = 'ADMINISTRADOR' WHERE id_usuario = {admin_id};")
 
-    # Autenticar como ADMINISTRADOR para obtener JWT con permisos de creación de productos
-    status, admin_login = http("POST", "/usuarios-api/api/v1/auth/login", payload={
-        "email": admin_email,
-        "contrasena": admin_password
-    })
-    check(status == 200, "Login de administrador efímero exitoso (200)")
-    admin_jwt = admin_login["accessToken"]
-    check(admin_jwt and len(admin_jwt) > 20, "JWT de administrador obtenido")
+        # Autenticar como ADMINISTRADOR para obtener JWT con permisos de creación de productos
+        status, admin_login = http("POST", "/usuarios-api/api/v1/auth/login", payload={
+            "email": admin_email,
+            "contrasena": admin_password
+        })
+        check(status == 200, "Login de administrador efímero exitoso (200)")
+        admin_jwt = admin_login["accessToken"]
+        check(admin_jwt and len(admin_jwt) > 20, "JWT de administrador obtenido")
 
-    # Crear producto dinámico aislado para el ensayo E2E
-    sku_dinamico = f"REACT-E2E-{run_id}".upper()
-    stock_inicial = 10
-    precio_unitario = 150
-    prod_payload = {
-        "sku": sku_dinamico,
-        "nombre": f"Cultivo Aislado E2E {run_id}",
-        "descripcion": "Producto efímero de prueba aislada para no consumir inventario preexistente.",
-        "precio": precio_unitario,
-        "stock": stock_inicial,
-        "planetaOrigen": "Bruma"
-    }
-    status, prod = http("POST", "/api/v1/productos", token=admin_jwt, payload=prod_payload)
-    check(status == 201, f"Producto de prueba aislado creado en Catálogo (201): SKU {sku_dinamico}, ID {prod.get('id')}")
-    prod_id = prod["id"]
-    print(f"    Producto aislado listo: {prod['nombre']} (ID: {prod_id}, Stock: {stock_inicial}, Precio: ${precio_unitario})", flush=True)
+        # Crear producto dinámico aislado para el ensayo E2E
+        sku_dinamico = f"REACT-E2E-{run_id}".upper()
+        stock_inicial = 10
+        precio_unitario = 150
+        prod_payload = {
+            "sku": sku_dinamico,
+            "nombre": f"Cultivo Aislado E2E {run_id}",
+            "descripcion": "Producto efímero de prueba aislada para no consumir inventario preexistente.",
+            "precio": precio_unitario,
+            "stock": stock_inicial,
+            "planetaOrigen": "Bruma"
+        }
+        status, prod = http("POST", "/api/v1/productos", token=admin_jwt, payload=prod_payload)
+        check(status == 201, f"Producto de prueba aislado creado en Catálogo (201): SKU {sku_dinamico}, ID {prod.get('id')}")
+        prod_id = prod["id"]
+        print(f"    Producto aislado listo: {prod['nombre']} (ID: {prod_id}, Stock: {stock_inicial}, Precio: ${precio_unitario})", flush=True)
+    finally:
+        revoke_temporary_admin(admin_id, admin_email, admin_password)
+        admin_jwt = None
 
     # 2. Registro de Cliente 1 vía proxy Vite
     email1 = f"cliente.react.{run_id}@huertohogar.test"
-    password1 = f"Clave.{run_id}.Secure!1"
+    password1 = secrets.token_urlsafe(24) + "Aa1!"
     rut1 = rut_valido(17000000 + secrets.randbelow(999999))
     status, reg_body = http("POST", "/usuarios-api/api/v1/usuarios", payload={
         "nombreUsuario": f"Cliente React {run_id}",
@@ -247,7 +288,7 @@ def run_e2e():
 
     # 9. Aislamiento multi-inquilino: Registrar Cliente 2 y verificar que no pueda acceder al pedido de Cliente 1
     email2 = f"cliente2.react.{run_id}@huertohogar.test"
-    password2 = f"Clave.{run_id}.Secure!2"
+    password2 = secrets.token_urlsafe(24) + "Aa1!"
     rut2 = rut_valido(17000000 + secrets.randbelow(999999))
     status, reg2 = http("POST", "/usuarios-api/api/v1/usuarios", payload={
         "nombreUsuario": f"Cliente React Dos {run_id}",
@@ -352,10 +393,6 @@ def run_e2e():
         check(stock_post == stock_prev,
               f"Stock compartido de SKU '{sku_prev}' inalterado ({stock_prev} -> {stock_post})")
     print(f"[+] Verificado: los {len(stock_previo_compartido)} SKUs preexistentes conservan su inventario exacto.", flush=True)
-
-    # 16. Revocación de credenciales del administrador efímero en MySQL
-    mysql_exec(f"UPDATE huertohogar_usuarios.usuario SET rol_usuario = 'CLIENTE', contrasena_usuario = 'REVOCADO_INACTIVO' WHERE id_usuario = {admin_id};")
-    print(f"[+] Credenciales del administrador efímero {admin_email} revocadas en huertohogar_usuarios.", flush=True)
 
     print(f"\n[+++] VALIDACIÓN E2E DE REACT CON 5 MICROSERVICIOS Y MYSQL 8.4: EXITOSA [+++]", flush=True)
 
