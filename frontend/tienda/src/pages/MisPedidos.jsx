@@ -41,6 +41,7 @@ export default function MisPedidos({ session }) {
           <ul className="order-items">{pedido.productos.map(item =>
             <li key={item.productoId}>{item.nombreProducto} × {item.cantidad} · {formatGalatiCoins(item.subtotal)}</li>)}</ul>
           <p><strong>Total: {formatGalatiCoins(pedido.total)}</strong></p>
+          <Link className="text-link" to={"/pedidos/" + pedido.id}>Ver detalle de la orden →</Link>
         </article>)}</div>}
   </section>
 }

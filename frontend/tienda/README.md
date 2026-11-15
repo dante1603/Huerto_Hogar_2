@@ -52,7 +52,7 @@ Catálogo y Usuarios admiten `APP_ALLOWED_ORIGINS` separados por comas; en hosti
 
 **Implementado en el MVP:** creación de pedido que reserva unidades en BD del Catálogo (H2 demo o MySQL configurado), listado de pedidos por cuenta y cola de pedidos pendientes para vendedor. No se cobra dinero: precios de ejemplo expresados en GalatiCoins.
 
-**No implementado:** cancelaciones, cofre sincronizado con Galaxym, entrega, confirmación OTP, seguimiento orbital, panel CRUD administrativo ni integración de misiones Galaxym. No hay despliegue ni URL pública de esta tienda.
+**No implementado:** cancelaciones, cofre sincronizado con Galaxym, entrega, confirmación OTP, seguimiento orbital ni integración de misiones Galaxym. El panel CRUD administrativo React y la consulta Vendedor se incorporaron posteriormente; requieren validación por perfil en navegador. No hay despliegue ni URL pública de esta tienda.
 
 **Importante:** los dos backends deben compartir `JWT_SECRET_BASE64` y `JWT_ISSUER`. No generes dos secretos diferentes. El código frontend jamás debe conocer el secreto; sólo almacena el token de sesión. La confirmación de un pedido puede descontar inventario y no admite cancelación todavía; úsalo únicamente con datos de prueba.
 
@@ -67,7 +67,7 @@ Catálogo y Usuarios admiten `APP_ALLOWED_ORIGINS` separados por comas; en hosti
 - `src/lib/api.js`: contratos de red existentes; no modificados en este corte.
 - `src/3d/models/`: seis modelos procedurales originales recuperados, cada uno en su propio módulo, aún **provisionales/no aprobados**. Ver su README para nombres, SKU, reemplazo y limitaciones.
 
-**Invariantes de este refactor:** se conservan exactamente las rutas, contratos REST, estilos CSS, componentes comerciales, clave del carrito, sesión, idempotencia y comportamiento de compra. Se conservan las páginas y contratos de la aplicación; la galería experimental 3D se presenta separada de la venta. La navegación según roles y el E2E siguen pendientes de un corte funcional posterior.
+**Invariantes de este refactor:** se conservan exactamente las rutas, contratos REST, estilos CSS, componentes comerciales, clave del carrito, sesión, idempotencia y comportamiento de compra. Se conservan las páginas y contratos de la aplicación; la galería experimental 3D se presenta separada de la venta. La navegación por roles ya se implementó en el corte EP3; siguen pendientes pruebas E2E con MySQL y verificación manual de las tres sesiones.
 
 ## Colección 3D recuperada — 14/11/2026
 
@@ -76,3 +76,20 @@ La página `/productos` incorpora una **galería visual independiente**, con vis
 Las seis muestras **no están a la venta**: el inventario, precio, nombres comerciales y stock siguen siendo los que devuelve Spring Boot. No hay asignaciones SKU→modelo inventadas. El seguimiento orbital del HTML y su simulador de estados permanecen separados de la aplicación React: no son telemetría real ni se han portado en este corte.
 
 El próximo incremento visual podrá vincular modelos aprobados a productos reales mediante `src/3d/modelRegistry.js` y migrar el diseño espacial de la tienda; la integración de seguimiento requiere un backend de entrega y telemetría autenticada.
+
+## Vistas por rol — corte EP3
+
+Las decisiones de navegación están centralizadas en src/lib/roles.js. El backend sigue siendo la frontera efectiva de seguridad.
+
+| Perfil | Rutas | Permisos |
+|---|---|---|
+| Invitado | /, /productos, /nosotros, /carrito, /acceso | Lectura de tienda, carrito local |
+| CLIENTE | Tienda, /carrito, /pedidos, /pedidos/:id y /acceso | Pedido propio y lectura de historial |
+| VENDEDOR | /consulta, /pedidos, /pedidos/:id y /acceso | Solo lista/detalle de productos y órdenes |
+| ADMINISTRADOR | /administracion, /consulta, /pedidos, tienda en lectura y /acceso | CRUD de productos y lectura autorizada |
+
+La administración real usa POST, PUT y DELETE /api/v1/productos con JWT ADMINISTRADOR. La consulta interna usa GET /api/v1/productos/{id} y la lectura de órdenes GET /api/v1/pedidos/{id}. Ninguna vista altera MySQL directamente.
+
+La sesión persiste en sessionStorage durante recargas de la misma pestaña, con limpieza al vencer. No existe renovación del JWT todavía; no afirmar persistencia entre reinicios del navegador. Manipular el rol guardado en sessionStorage no aumenta privilegios en Spring Security.
+
+Pruebas de roles, sesión, API y compilación se ejecutan con npm test y npm run build. Quedan para el último corte la prueba con MySQL, navegador real, cuentas privilegiadas y capturas de Swagger.

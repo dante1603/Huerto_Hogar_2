@@ -1,0 +1,31 @@
+.admin-page .page-title{margin-bottom:26px}
+.admin-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.85fr);gap:18px;align-items:start}
+.admin-list-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.admin-list-top h2{margin:0}
+.admin-product-list{display:grid;gap:0}
+.admin-product-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 0;border-top:1px solid #dce5d9}
+.admin-product-main{display:grid;gap:5px;min-width:0;overflow-wrap:anywhere}
+.admin-product-main strong{color:inherit;font-size:15px}
+.admin-product-main small,.admin-product-main span{color:#687b69;font-size:12px;line-height:1.5}
+.admin-row-actions{display:flex;gap:7px;flex-wrap:wrap}
+.button-danger{color:#893e37;background:#f6e9e3}
+.button-danger:hover:not(:disabled){background:#efdcd3}
+.admin-form{display:grid;gap:13px}
+.admin-form h2{margin:4px 0 3px}
+.admin-form label{display:grid;gap:7px;font-size:12px;font-weight:700;color:#53705a}
+.admin-form input,.admin-form textarea{font:inherit;color:#26392e;background:#fff;border:1px solid #cbdac8;border-radius:10px;padding:11px;width:100%;min-width:0}
+.admin-form textarea{resize:vertical}
+.admin-form input:focus,.admin-form textarea:focus{outline:2px solid #88ad89}
+.admin-form-inline{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.admin-form-actions{display:flex;gap:9px;flex-wrap:wrap}
+.admin-detail{margin-top:16px}
+.admin-detail p{line-height:1.55}
+@media(max-width:860px){.admin-layout{grid-template-columns:1fr}}
+@media(max-width:540px){.admin-product-row{align-items:start;flex-direction:column}.admin-form-inline{grid-template-columns:1fr}}
+@media(prefers-color-scheme:dark){
+  .admin-product-row{border-color:#3e5a43}
+  .admin-product-main small,.admin-product-main span{color:#b3c6b4}
+  .admin-form label{color:#bfd9c1}
+  .admin-form input,.admin-form textarea{color:#e4efe0;background:#1a2a20;border-color:#54705b}
+  .button-danger{color:#f1c7b9;background:#61423a}
+}
