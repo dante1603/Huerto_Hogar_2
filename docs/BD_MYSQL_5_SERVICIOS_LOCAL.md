@@ -1,6 +1,7 @@
 # EP3 — MySQL real para los cinco microservicios (Windows / PowerShell)
 
-**Estado:** configuración de repositorio preparada; **validación con Docker/MySQL real pendiente de ejecutar**. Este documento es el procedimiento reproducible para el primer gate de base de datos. No equivale a un PASS ni a certificación de la entrega.
+**Estado:** **Gate 1, Gate 2 y Gate 3 APROBADOS (PASS)** con Docker y MySQL 8.4.13 real.
+Evidencia completa de ejecución, transaccionalidad, persistencia tras reinicio y renovación de refresh tokens documentada en [VERIFICACION_MYSQL_EP3.md](file:///c:/Users/Admin/Documents/proyectos/HuertoHogar2/docs/VERIFICACION_MYSQL_EP3.md).
 
 Rama de preparación: `fix/mysql-cinco-esquemas-2026-11-15` (PR contra `integration/fullstack-2026-11-14`).
 
@@ -73,12 +74,21 @@ Levantar cada Spring Boot **sin perfil demo/H2**, con el usuario `huerto_app`, s
 
 Por cada servicio, comprobar que inicia sin error de conexión/JPA. Luego verificar en MySQL que Hibernate creó sus tablas reales, índices, claves y relaciones locales. Un servicio que arranca no demuestra aún que los cinco estén completos.
 
-## Gate 3 — persistencia y flujo real (todavía pendiente)
+## Gate 3 — persistencia y flujo real (APROBADO — PASS)
 
-Con las cinco JVM funcionando, registrar un cliente y crear una compra de prueba por REST, recorrer Pedidos → Boleta → Detalle, comprobar stock/idempotencia y reiniciar las cinco aplicaciones **sin eliminar el volumen**. Confirmar que los datos, los precios históricos y las relaciones siguen intactos. Repetir con el navegador React en el siguiente corte; no conmutar la ruta de Pedidos legada solo por este smoke test.
+Con las cinco JVM funcionando sobre MySQL 8.4 real:
+1. Se registró un cliente y se autenticó obteniendo JWT y refresh token previo al reinicio.
+2. Se crearon pedidos con bloqueo pesimista y descuento de inventario en Catálogo.
+3. Se emitieron boletas académicas inmutables y líneas de detalle verificadas con importes exactos.
+4. Se validó la idempotencia (reintentos idénticos devuelven 200 sin duplicar pedidos ni stock; reintentos con payload alterado devuelven 409).
+5. Se reiniciaron en frío los cinco servicios; la persistencia de stock, pedidos, boletas y detalles se confirmó intacta.
+6. Se renovó la sesión exitosamente usando el refresh token previo al reinicio, y se comprobó el bloqueo anti-replay (401 en reuso).
 
-El reconciliador de Pedidos permanece **deshabilitado** (`RECONCILIACION_HABILITADA=false`) hasta que la recuperación ante fallos de red se valide explícitamente.
+Evidencia completa y script ejecutable: `scripts/verify_mysql_gate3.py` y [VERIFICACION_MYSQL_EP3.md](file:///c:/Users/Admin/Documents/proyectos/HuertoHogar2/docs/VERIFICACION_MYSQL_EP3.md).
+
+El reconciliador de Pedidos permanece **deshabilitado** (`RECONCILIACION_HABILITADA=false`) hasta que la recuperación ante fallos de red se valide explícitamente en el siguiente corte.
 
 ## Evidencia para cerrar este corte
 
-Anotar fecha, rama/commit, salida de `docker compose ps`, los cinco esquemas visibles para `huerto_app`, versión de MySQL, resultado de arranque de los cinco servicios y prueba de persistencia posterior a reinicio. Ocultar contraseñas y tokens en capturas/logs. **Gate 1 PASS no es Gate 2/3 PASS.**
+Fecha: 15-11-2026. Rama: `fix/mysql-cinco-esquemas-2026-11-15`. MySQL: 8.4.13. Esquemas: `huertohogar_catalogo`, `huertohogar_usuarios`, `huertohogar_pedidos`, `huertohogar_boleta`, `huertohogar_detalle_boleta`.
+Resultado: **Gate 1 PASS, Gate 2 PASS, Gate 3 PASS**.

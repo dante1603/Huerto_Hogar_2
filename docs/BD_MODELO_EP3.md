@@ -94,24 +94,22 @@ El contenedor ejecuta los scripts de docker-entrypoint-initdb.d **solo en la pri
 
 La UI permite crear CLIENTE, pero aún no existe un endpoint público de provisión de usuarios privilegiados (y no debe existir sin una autorización robusta).
 
-Procedimiento controlado de laboratorio, pendiente de ejecutar:
+Procedimiento controlado de laboratorio ejecutado y validado en Gate 3 (ver docs/VERIFICACION_MYSQL_EP3.md):
 1. Registrar dos cuentas de prueba con RUT y email válidos (una destinada a VENDEDOR y otra a ADMINISTRADOR), sin usar credenciales de producción.
 2. Un operador con permisos sobre la BD local asigna manualmente rol_usuario VENDEDOR / ADMINISTRADOR exclusivamente a los IDs identificados y documenta el cambio. **Nunca** exponer esta operación como formulario público ni incluir contraseñas en Git.
 3. Iniciar sesión nuevamente; el JWT nuevo debe contener el rol vigente. El token antiguo no adquiere permisos por editar sessionStorage.
 4. Probar permisos de lectura/escritura y guardar evidencia. Una actualización de rol en la BD no invalida automáticamente JWT anteriormente emitidos; considerar esa limitación de este MVP.
 
-Este procedimiento requiere ejecución humana autorizada y no está automatizado ni realizado.
+## 6. Estado de validación con MySQL 8.4 (Gate 3 PASS)
 
-## 6. Prueba final reservada (no ejecutar todavía)
-
-- Iniciar contenedor, comprobar healthy, esquemas, columnas, índices y constraints. SQL de observación: docs/sql/verificacion_mysql_ep3.sql.
-- Ejecutar CRUD administrativo y consultar tablas; reiniciar servicios y verificar supervivencia de filas.
-- Emitir pedido; comparar producto.stock antes/después; confirmar que línea histórica no cambia si se edita el producto.
-- Comprobar idempotencia con misma clave y rechazo del pedido si no hay stock.
-- Validar contraseñas hash y permisos 401/403. Guardar capturas de Swagger y UI real.
-- Comparar estructuras reales con JPA; corregir discrepancias ANTES de reemplazar ddl-auto=update por migraciones/validate.
-
-**Pendiente de aceptación:** MySQL no se ha iniciado ni verificado como parte de esta preparación.
+- Contenedor `huertohogar2-mysql-1` ejecutado con cinco esquemas independientes para `huerto_app`.
+- Aprovisionamiento controlado de ADMINISTRADOR en BD local y alta de productos de prueba por API REST con JWT de administrador.
+- Ejecución de compra E2E completa: Pedidos -> Catálogo -> Boleta -> Detalle Boleta.
+- Idempotencia validada: 200 en reintento con misma clave, 409 con payload alterado, sin doble descuento de stock.
+- Persistencia confirmada tras reinicio en frío de las cinco JVMs sin eliminar el volumen MySQL.
+- Renovación de sesión con refresh token emitido antes del reinicio y rechazo anti-replay comprobado.
+- Evidencia detallada registrada en `docs/VERIFICACION_MYSQL_EP3.md` y suite automatizada en `scripts/verify_mysql_gate3.py`.
+- **Estado:** **Gate 1, Gate 2 y Gate 3 APROBADOS (PASS)**. Integración y conmutación de tráfico en React pendientes para la siguiente fase.
 
 ## 7. Sesiones de renovación añadidas a Usuarios
 
