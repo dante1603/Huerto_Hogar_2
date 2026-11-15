@@ -6,8 +6,8 @@
 ## Orden de implementación
 
 1. IE3.2.1 (8 %): CRUD seguro de Productos + OpenAPI. Integrado PR #12; Swagger visual pendiente.
-2. IE3.3.3 (6 %): guardas de rutas CLIENTE/VENDEDOR/ADMINISTRADOR, panel CRUD y vistas de lectura, con llamadas REST y tests. Corte actual.
-3. IE3.3.1 + IE3.3.2 (12 %): reforzar JWT, creación controlada de cuentas de Vendedor/Admin, caducidad/renovación, tests.
+2. IE3.3.3 (6 %): guardas CLIENTE/VENDEDOR/ADMINISTRADOR, panel CRUD y detalles REST **implementados en PR #13**; pruebas Node y build aprobadas, navegador pendiente.
+3. IE3.3.1 + IE3.3.2 (12 %): JWT firmado, controles de acceso, renovación de tokens de un solo uso, revocación y caducidad **implementados y comprobados con CI H2/Node** en PR #14/#16/#17. Aún falta provisión controlada de cuentas VENDEDOR/ADMINISTRADOR, pruebas en navegador y MySQL real.
 4. IE3.2.2 (6 %): revisar flujos API/frontend, asegurar coherencia de errores y evidencia funcional.
 5. IE3.1.1 (8 %): consolidar modelo relacional, scripts versionados e instrucciones de restauración; ejecución MySQL pospuesta.
 6. Documentación: ERS terminada con alcance validado, manual con pantallazos reales, listado de APIs, informe de integración, enlaces GitHub y ZIP finales.
@@ -32,3 +32,7 @@
 6. Generar capturas reales para manual/ERS/integración y ZIP de código sin secretos.
 
 **Estado:** sin evidencia MySQL real. No declarar PASS completo antes de estos pasos.
+
+## Corte actual integrado
+
+PR #12 CRUD, #13 rutas por rol, #14 protección de pedidos, #16 refresh JWT y #17 renovación React están integradas. ERS, manual y modelo de datos preparados como borradores. **No hay prueba MySQL real, capturas ni ZIP definitivos aún.**
