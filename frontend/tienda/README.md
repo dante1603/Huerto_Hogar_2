@@ -52,6 +52,52 @@ Catálogo y Usuarios admiten `APP_ALLOWED_ORIGINS` separados por comas; en hosti
 
 **Implementado en el MVP:** creación de pedido que reserva unidades en BD del Catálogo (H2 demo o MySQL configurado), listado de pedidos por cuenta y cola de pedidos pendientes para vendedor. No se cobra dinero: precios de ejemplo expresados en GalatiCoins.
 
-**No implementado:** cancelaciones, cofre sincronizado con Galaxym, entrega, confirmación OTP, seguimiento orbital, panel CRUD administrativo ni integración de misiones Galaxym. No hay despliegue ni URL pública de esta tienda.
+**No implementado:** cancelaciones, cofre sincronizado con Galaxym, entrega, confirmación OTP, seguimiento orbital ni integración de misiones Galaxym. El panel CRUD administrativo React y la consulta Vendedor se incorporaron posteriormente; requieren validación por perfil en navegador. No hay despliegue ni URL pública de esta tienda.
 
 **Importante:** los dos backends deben compartir `JWT_SECRET_BASE64` y `JWT_ISSUER`. No generes dos secretos diferentes. El código frontend jamás debe conocer el secreto; sólo almacena el token de sesión. La confirmación de un pedido puede descontar inventario y no admite cancelación todavía; úsalo únicamente con datos de prueba.
+
+## Organización interna del frontend — 14/11/2026
+
+- `src/App.jsx`: composición de la aplicación; ya no implementa directamente la carga de productos, la persistencia del carrito o la sesión.
+- `src/app/AppRoutes.jsx`: tabla única de rutas React Router y vinculación de páginas.
+- `src/components/layout/`: encabezado y pie de página compartidos, sin cambios visuales.
+- `src/hooks/useCatalogo.js`: catálogo real, loading/error, reintento y cancelación al desmontar.
+- `src/hooks/useCarrito.js`: estado del carrito y persistencia de almacenamiento; las reglas puras siguen en `src/lib/cart.js`.
+- `src/hooks/useSesion.js`: sesión React; las operaciones de almacenamiento JWT siguen en `src/lib/session.js`.
+- `src/lib/api.js`: contratos de red existentes; no modificados en este corte.
+- `src/3d/models/`: seis modelos procedurales originales recuperados, cada uno en su propio módulo, aún **provisionales/no aprobados**. Ver su README para nombres, SKU, reemplazo y limitaciones.
+
+**Invariantes de este refactor:** se conservan exactamente las rutas, contratos REST, estilos CSS, componentes comerciales, clave del carrito, sesión, idempotencia y comportamiento de compra. Se conservan las páginas y contratos de la aplicación; la galería experimental 3D se presenta separada de la venta. La navegación por roles ya se implementó en el corte EP3; siguen pendientes pruebas E2E con MySQL y verificación manual de las tres sesiones.
+
+## Colección 3D recuperada — 14/11/2026
+
+La página `/productos` incorpora una **galería visual independiente**, con visor WebGL 1 nativo/fallback Canvas 2D. Incluye Zorbulbo, Lunahoja, Crisollo, Solabaya, Nebupoma y Miramelón, extraídos del HTML original y disponibles como seis archivos bajo `src/3d/models/`. Los modelos **son provisionales** y aún no han sido aprobados. Se cargan bajo demanda, con un único canvas y liberación de recursos; no se incorpora Three.js.
+
+Las seis muestras **no están a la venta**: el inventario, precio, nombres comerciales y stock siguen siendo los que devuelve Spring Boot. No hay asignaciones SKU→modelo inventadas. El seguimiento orbital del HTML y su simulador de estados permanecen separados de la aplicación React: no son telemetría real ni se han portado en este corte.
+
+El próximo incremento visual podrá vincular modelos aprobados a productos reales mediante `src/3d/modelRegistry.js` y migrar el diseño espacial de la tienda; la integración de seguimiento requiere un backend de entrega y telemetría autenticada.
+
+## Vistas por rol — corte EP3
+
+Las decisiones de navegación están centralizadas en src/lib/roles.js. El backend sigue siendo la frontera efectiva de seguridad.
+
+| Perfil | Rutas | Permisos |
+|---|---|---|
+| Invitado | /, /productos, /nosotros, /carrito, /acceso | Lectura de tienda, carrito local |
+| CLIENTE | Tienda, /carrito, /pedidos, /pedidos/:id y /acceso | Pedido propio y lectura de historial |
+| VENDEDOR | /consulta, /pedidos, /pedidos/:id y /acceso | Solo lista/detalle de productos y órdenes |
+| ADMINISTRADOR | /administracion, /consulta, /pedidos, tienda en lectura y /acceso | CRUD de productos y lectura autorizada |
+
+La administración real usa POST, PUT y DELETE /api/v1/productos con JWT ADMINISTRADOR. La consulta interna usa GET /api/v1/productos/{id} y la lectura de órdenes GET /api/v1/pedidos/{id}. Ninguna vista altera MySQL directamente.
+
+La sesión persiste en sessionStorage durante recargas de la misma pestaña, con limpieza al vencer. No existe renovación del JWT todavía; no afirmar persistencia entre reinicios del navegador. Manipular el rol guardado en sessionStorage no aumenta privilegios en Spring Security.
+
+Pruebas de roles, sesión, API y compilación se ejecutan con npm test y npm run build. Quedan para el último corte la prueba con MySQL, navegador real, cuentas privilegiadas y capturas de Swagger.
+
+## Renovación JWT — corte EP3
+
+El servicio Usuarios entrega un JWT con expiración de 30 minutos y un refresh token opaco de 256 bits con vencimiento de 24 horas. La tabla JPA refresh_sesion persiste exclusivamente SHA-256 de la credencial; el token se rota tras cada renovación y puede revocarse con POST /api/v1/auth/logout. El frontend trata de renovar antes de la expiración y después de recargas de la misma pestaña.
+
+**Limitación de seguridad del MVP:** el refresh token se guarda en sessionStorage y por tanto es accesible a JavaScript. No asumir producción segura sin una revisión de XSS, CSP, cookies HttpOnly/CSRF o rediseño del manejo de sesión. La revocación de refresh impide nuevas renovaciones, **pero no invalida instantáneamente JWT de acceso ya emitidos**. En un despliegue real se requeriría endurecimiento adicional.
+
+Tests Node verifican serialización/expiración y contrato REST de refresh/logout; tests MockMvc/H2 verifican rotación y rechazo de reutilización. Persistencia MySQL real y recuperación en navegador quedan para la validación final.

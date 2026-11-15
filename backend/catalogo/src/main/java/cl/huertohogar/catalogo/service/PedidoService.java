@@ -110,6 +110,9 @@ public class PedidoService {
     public PedidoResponse detalle(Long pedidoId, Long actorId, String rol) {
         Pedido pedido = pedidos.findById(pedidoId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido no existe"));
+        if (!List.of("CLIENTE", "VENDEDOR", "ADMINISTRADOR").contains(rol)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Rol no autorizado para consultar pedidos");
+        }
         if ("CLIENTE".equals(rol) && !pedido.getClienteId().equals(actorId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Pedido de otro cliente");
         }

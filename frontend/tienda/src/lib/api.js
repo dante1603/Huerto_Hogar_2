@@ -1,5 +1,5 @@
-const catalogHost = (import.meta.env.VITE_CATALOGO_API_URL || '').replace(/\/$/, '')
-const usersHost = (import.meta.env.VITE_USUARIOS_API_URL || '/usuarios-api').replace(/\/$/, '')
+const catalogHost = (import.meta.env?.VITE_CATALOGO_API_URL || '').replace(/\/$/, '')
+const usersHost = (import.meta.env?.VITE_USUARIOS_API_URL || '/usuarios-api').replace(/\/$/, '')
 
 export class ApiError extends Error {
   constructor(status, message) {
@@ -28,8 +28,10 @@ async function request(url, options = {}) {
     if (response.status === 409) throw new ApiError(409, 'Conflicto: stock insuficiente, clave reutilizada o datos duplicados. Actualiza antes de reintentar.')
     if (response.status === 403) throw new ApiError(403, 'Tu cuenta no tiene permiso para esta operación.')
     if (response.status === 400) throw new ApiError(400, 'Revisa los datos ingresados.')
+    if (response.status === 404) throw new ApiError(404, 'El recurso no existe o fue eliminado.')
     throw new ApiError(response.status, 'La solicitud no pudo completarse. Código ' + response.status + '.')
   }
+  if (response.status === 204) return null
   return response.json()
 }
 
@@ -68,5 +70,49 @@ export function consultarPedidos(token, rol) {
   const endpoint = rol === 'CLIENTE' ? '/mios' : '/pendientes'
   return request(catalogHost + '/api/v1/pedidos' + endpoint, {
     headers: { Authorization: 'Bearer ' + token },
+  })
+}
+
+function adminHeaders(token) {
+  return { Authorization: 'Bearer ' + token }
+}
+
+export function fetchProducto(id, { signal } = {}) {
+  return request(catalogHost + '/api/v1/productos/' + encodeURIComponent(id), { signal })
+}
+
+export function crearProducto(producto, token) {
+  return request(catalogHost + '/api/v1/productos', {
+    method: 'POST', headers: adminHeaders(token), body: JSON.stringify(producto),
+  })
+}
+
+export function actualizarProducto(id, producto, token) {
+  return request(catalogHost + '/api/v1/productos/' + encodeURIComponent(id), {
+    method: 'PUT', headers: adminHeaders(token), body: JSON.stringify(producto),
+  })
+}
+
+export function eliminarProducto(id, token) {
+  return request(catalogHost + '/api/v1/productos/' + encodeURIComponent(id), {
+    method: 'DELETE', headers: adminHeaders(token),
+  })
+}
+
+export function consultarPedido(id, token) {
+  return request(catalogHost + '/api/v1/pedidos/' + encodeURIComponent(id), {
+    headers: { Authorization: 'Bearer ' + token },
+  })
+}
+
+export function renovarSesion(refreshToken) {
+  return request(usersHost + '/api/v1/auth/refresh', {
+    method: 'POST', body: JSON.stringify({ refreshToken }),
+  })
+}
+
+export function revocarSesion(refreshToken) {
+  return request(usersHost + '/api/v1/auth/logout', {
+    method: 'POST', body: JSON.stringify({ refreshToken }),
   })
 }

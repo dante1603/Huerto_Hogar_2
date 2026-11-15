@@ -216,4 +216,33 @@ class PedidoControllerTest {
             .andExpect(status().isBadRequest());
         org.junit.jupiter.api.Assertions.assertEquals(0, pedidos.count());
     }
+    @Test
+    void detalleSoloPermiteRolesDefinidosYClientePropietario() throws Exception {
+        String response = mvc.perform(post(ROOT)
+                .header("Authorization", "Bearer " + token(42, "CLIENTE"))
+                .header("Idempotency-Key", UUID.randomUUID().toString())
+                .contentType(MediaType.APPLICATION_JSON).content(order(idTuberculo, 1)))
+            .andExpect(status().isCreated())
+            .andReturn().getResponse().getContentAsString();
+        int pedidoId = JsonPath.read(response, "$.id");
+
+        mvc.perform(get(ROOT + "/" + pedidoId))
+            .andExpect(status().isUnauthorized());
+        mvc.perform(get(ROOT + "/" + pedidoId)
+                .header("Authorization", "Bearer " + token(42, "CLIENTE")))
+            .andExpect(status().isOk());
+        mvc.perform(get(ROOT + "/" + pedidoId)
+                .header("Authorization", "Bearer " + token(43, "CLIENTE")))
+            .andExpect(status().isForbidden());
+        mvc.perform(get(ROOT + "/" + pedidoId)
+                .header("Authorization", "Bearer " + token(11, "VENDEDOR")))
+            .andExpect(status().isOk());
+        mvc.perform(get(ROOT + "/" + pedidoId)
+                .header("Authorization", "Bearer " + token(20, "ADMINISTRADOR")))
+            .andExpect(status().isOk());
+        mvc.perform(get(ROOT + "/" + pedidoId)
+                .header("Authorization", "Bearer " + token(99, "DESCONOCIDO")))
+            .andExpect(status().isForbidden());
+    }
+
 }

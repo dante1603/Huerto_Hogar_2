@@ -18,7 +18,7 @@ export default function ProductCard({ product, add }) {
         <div className="stock">{product.stock > 0 ? `En inventario: ${product.stock}` : 'Agotado'}</div>
         {expanded && <p className="product-desc">{product.descripcion}</p>}
         <div className="product-actions">
-          <button type="button" className="button button-primary" onClick={() => add(product)} disabled={!(Number(product.stock) > 0)}>Añadir</button>
+          {typeof add === 'function' && <button type="button" className="button button-primary" onClick={() => add(product)} disabled={!(Number(product.stock) > 0)}>Añadir</button>}
           <button type="button" className="button button-quiet" onClick={() => setExpanded((x) => !x)} aria-expanded={expanded}>{expanded ? 'Menos' : 'Detalle'}</button>
         </div>
       </div>
