@@ -352,6 +352,16 @@ def run_full_gate3():
         # 2. Aprovisionamiento de Administrador y Creacion de Fixtures Aisladas
         print("\n--- PASO 2: Aislamiento de fixtures y productos de prueba ---", flush=True)
         rotate_compromised_admin()
+
+        # Validacion explicita de rechazo 401 a credenciales antiguas y confirmacion de rol no administrativo
+        expect(8081, "POST", "/api/v1/auth/login", 401, payload={
+            "email": "admin.gate3@huertohogar.cl",
+            "contrasena": "AdminGate3!2026"
+        })
+        print("[+] Login con cuenta antigua comprometida rechazado con HTTP 401 Unauthorized", flush=True)
+        old_role = mysql_exec("SELECT rol_usuario FROM huertohogar_usuarios.usuario WHERE email_usuario = 'admin.gate3@huertohogar.cl';")
+        check(old_role == "CLIENTE", f"Cuenta antigua revocada a rol CLIENTE (rol actual: {old_role})")
+
         admin_email, admin_pass = provision_ephemeral_admin(run_id)
 
         # Login de admin para obtener JWT con rol ADMINISTRADOR
@@ -704,6 +714,22 @@ def run_full_gate3():
         for sku, stock_prev in stock_previo_compartido.items():
             check(stock_final_compartido.get(sku) == stock_prev,
                   f"Producto de trabajo {sku} permanece intacto con stock={stock_prev} (no consumido por la prueba)")
+
+        # 14. Confirmacion de desactivacion de cuenta administradora efimera
+        print("\n--- PASO 14: Confirmacion de desactivacion de cuenta efimera ---", flush=True)
+        mysql_exec(
+            f"UPDATE huertohogar_usuarios.usuario "
+            f"SET contrasena_usuario = '$2a$10$EPHEMERAL_DEACTIVATED', rol_usuario = 'CLIENTE' "
+            f"WHERE email_usuario = '{admin_email}';"
+        )
+        row_admin = mysql_exec(f"SELECT rol_usuario, contrasena_usuario FROM huertohogar_usuarios.usuario WHERE email_usuario = '{admin_email}';").split()
+        check(row_admin[0] == "CLIENTE", "Administrador efimero revocado a rol CLIENTE tras finalizar")
+        check(row_admin[1] == "$2a$10$EPHEMERAL_DEACTIVATED", "Credencial de administrador efimero desactivada en BD")
+        expect(8081, "POST", "/api/v1/auth/login", 401, payload={
+            "email": admin_email,
+            "contrasena": admin_pass
+        })
+        print("[+] Login posterior de administrador efimero desactivado rechazado con HTTP 401 Unauthorized", flush=True)
 
         print("\n======================================================================", flush=True)
         print("  RESULTADO: GATE 3 PASS (AUDITADO)", flush=True)

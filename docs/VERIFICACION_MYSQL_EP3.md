@@ -217,31 +217,42 @@ FROM huertohogar_detalle_boleta.detalle_boleta WHERE id_boleta = :boleta_id;
 
 ---
 
-## 9. Reproducibilidad
+## 9. Reproducibilidad y Validación de Cuentas de Acceso
 
 El procedimiento completo está automatizado en el script:
 ```powershell
 python scripts/verify_mysql_gate3.py
 ```
 
-Salida final del runner:
-```text
-======================================================================
-  RESULTADO: GATE 3 PASS
-  Cinco microservicios validados sobre MySQL 8.4 y HTTP real:
-  - Registro, login y refresh token rotativo
-  - Creacion de pedido y reserva transaccional con descuento de stock
-  - Idempotencia en pedidos, boletas y detalles
-  - Emision de comprobante academico inmutable y lineas de detalle
-  - Aislamiento multi-inquilino estricto
-  - Persistencia comprobada tras reinicio en frio de las cinco JVM
-  - Renovacion de sesion exitosa post-reinicio con token previo
-======================================================================
-```
+La suite ejecuta 14 fases automatizadas con verificación continua en HTTP y MySQL:
+1. Comprobación de esquemas independientes en MySQL 8.4 para `huerto_app`.
+2. Rotación de cuenta antigua expuesta (`admin.gate3@huertohogar.cl`), confirmación de rechazo `401 Unauthorized` ante login, verificación en BD de degradación a rol `CLIENTE`, y provisión de administrador efímero con credencial en memoria.
+3. Registro y login de clientes sintéticos con contraseñas seguras y emisión de JWT + refresh token.
+4. Creación de pedido comercial con reserva de inventario y bloqueo pesimista ordenado.
+5. Verificación de idempotencia (reintento idéntico `200 OK` sin doble descuento de stock, reintento alterado `409 Conflict`).
+6. Emisión de boleta académica inmutable (`COMPROBANTE_ACADEMICO_NO_TRIBUTARIO`).
+7. Generación de líneas de detalle vinculadas y verificación de sumatoria exacta ($490).
+8. Aislamiento multi-inquilino (rechazo con `403 Forbidden` y `404 Not Found` ante accesos ajenos).
+9. Verificación relacional SQL determinista por llaves foráneas e IDs exactos (consultas como `huerto_app`).
+10. Reinicio en frío de las 5 JVMs gestionadas preservando intacto el volumen MySQL.
+11. Verificación de persistencia post-reinicio de pedidos, boletas, detalles y stock.
+12. Renovación de sesión post-reinicio con refresh token previo y bloqueo anti-replay (`401 Unauthorized` en reuso).
+13. Verificación de preservación íntegra de stock de productos compartidos (`BRU-TUB-001` y `ARI-FRU-002`).
+14. Desactivación de la cuenta de administrador efímero (hash revocado a `$2a$10$EPHEMERAL_DEACTIVATED`, rol demotado a `CLIENTE` y confirmación de rechazo `401 Unauthorized` en intentos de login posteriores).
 
 ---
 
-## 10. Conclusión y Estado de Gates
+## 10. Análisis de Incidencia SonarCloud (PR #30)
+
+SonarQube Cloud analizó los cambios de la PR #30 emitiendo el veredicto **Quality Gate Passed**:
+- **Incidencia identificada:** `plsql:S1192` ("Define a constant instead of duplicating this literal 3 times.") en `infra/mysql/02-create-services.sql` (líneas 13-15).
+- **Tipo / Severidad:** `CODE_SMELL` / Maintainability.
+- **Literal señalado:** `'huerto_app'@'%'` repetido en tres sentencias `GRANT ALL PRIVILEGES ON ... TO 'huerto_app'@'%';`.
+- **Clasificación y justificación:** Olor de código informativo menor en script DDL declarativo. En scripts SQL de inicialización para `docker-entrypoint-initdb.d`, la sintaxis de concesión de privilegios exige literales de usuario y host. MySQL en scripts DDL batch no admite constantes de módulo sin recurrir a bloques de procedimientos almacenados complejos o SQL dinámico (`PREPARE`), lo cual restaría transparencia y mantenibilidad a la inicialización de infraestructura. La incidencia no compromete seguridad ni funcionalidad y el Quality Gate general de SonarCloud se encuentra **aprobado**.
+
+---
+
+## 11. Conclusión y Estado de Gates
 
 - **Gate 1:** Creación y acceso a los cinco esquemas MySQL -> **APROBADO (PASS)**.
 - **Gate 2:** Conexión JPA/Hibernate de los cinco servicios sobre MySQL real -> **APROBADO (PASS)**.
