@@ -63,3 +63,13 @@ Nota: los refresh tokens son secretos y no deben mostrarse en logs, URLs ni capt
 ## Contrato REST Productos / Pedidos (primer corte cinco microservicios)
 
 PUT/GET/DELETE /api/v1/interno/reservas/{referencia} requieren JWT SERVICIO_PEDIDOS. PUT acepta productos[{productoId,cantidad}]; crea reserva atómica (201), reintenta mismo UUID sin descontar (200), o devuelve 400/404/409. GET consulta snapshot y estado para reconciliar timeouts. DELETE compensa stock solo una vez y conserva tombstone de CANCELADA (204). Precio proviene del backend, no del navegador. Consulte docs/ARQUITECTURA_5_MICROSERVICIOS_EP3.md. **Existe un tercer proyecto Pedidos independiente (PR #21) con controlador y gateway, pero React aún usa Pedidos legado del Catálogo; no se ha verificado comunicación distribuida ni MySQL.**
+
+
+## Contrato Boleta (cuarto servicio, rama de trabajo)
+
+| Ruta | Metodo | Autorizacion | Resultado |
+|---|---|---|---|
+| `/api/v1/boletas` | POST | JWT CLIENTE | `{pedidoId}`; 201 nueva, 200 reintento, 409 pedido no confirmado, 503 sin snapshot valido |
+| `/api/v1/boletas/{id}` | GET | JWT propietario o VENDEDOR/ADMINISTRADOR | 200, 404 si otro cliente |
+
+Se obtiene snapshot de `backend/pedidos` mediante el JWT del cliente delegado. No se aceptan usuario/total/precio por JSON. El documento es academico, inmutable y NO tributario; no prueba pago. Pedidos independiente no recibe aun trafico desde React. E2E real/MySQL pendientes.
