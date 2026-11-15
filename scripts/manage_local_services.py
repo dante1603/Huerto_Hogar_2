@@ -245,7 +245,7 @@ def get_process_snapshot(pid):
 
     try:
         started_before = read_start_time()
-        command = cmd_path.read_bytes().replace(b"\\x00", b" ").decode(
+        command = cmd_path.read_bytes().replace(b"\x00", b" ").decode(
             "utf-8", errors="replace"
         ).strip()
         started_after = read_start_time()
@@ -272,13 +272,13 @@ def _normalized_absolute_jar(path):
 
 def _java_jar_from_command(command):
     # Aceptar únicamente el ejecutable Java como proceso principal, con -jar.
-    exe = re.match(r'^\\s*(?:"([^"]+)"|(\\S+))', command)
+    exe = re.match(r'^\s*(?:"([^"]+)"|(\S+))', command)
     if not exe:
         return None
     exe_name = ntpath.basename(exe.group(1) or exe.group(2)).lower()
     if exe_name not in {"java", "java.exe", "javaw.exe"}:
         return None
-    jar = re.search(r'(?:^|\\s)-jar\\s+(?:"([^"]+)"|(\\S+))(?=\\s|$)', command, re.I)
+    jar = re.search(r'(?:^|\s)-jar\s+(?:"([^"]+)"|(\S+))(?=\s|$)', command, re.I)
     return (jar.group(1) or jar.group(2)) if jar else None
 
 
