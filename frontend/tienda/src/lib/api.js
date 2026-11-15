@@ -1,5 +1,8 @@
 const catalogHost = (import.meta.env?.VITE_CATALOGO_API_URL || '').replace(/\/$/, '')
 const usersHost = (import.meta.env?.VITE_USUARIOS_API_URL || '/usuarios-api').replace(/\/$/, '')
+const ordersHost = (import.meta.env?.VITE_PEDIDOS_API_URL || '').replace(/\/$/, '')
+const boletaHost = (import.meta.env?.VITE_BOLETA_API_URL || '').replace(/\/$/, '')
+const detalleBoletaHost = (import.meta.env?.VITE_DETALLE_BOLETA_API_URL || '').replace(/\/$/, '')
 
 export class ApiError extends Error {
   constructor(status, message) {
@@ -29,6 +32,7 @@ async function request(url, options = {}) {
     if (response.status === 403) throw new ApiError(403, 'Tu cuenta no tiene permiso para esta operación.')
     if (response.status === 400) throw new ApiError(400, 'Revisa los datos ingresados.')
     if (response.status === 404) throw new ApiError(404, 'El recurso no existe o fue eliminado.')
+    if (response.status === 503) throw new ApiError(503, 'Servicio temporalmente no disponible o validación remota pendiente.')
     throw new ApiError(response.status, 'La solicitud no pudo completarse. Código ' + response.status + '.')
   }
   if (response.status === 204) return null
@@ -56,7 +60,7 @@ export function registrarUsuario(data) {
 }
 
 export function crearPedido(data, token, idempotencyKey) {
-  return request(catalogHost + '/api/v1/pedidos', {
+  return request(ordersHost + '/api/v1/pedidos', {
     method: 'POST',
     headers: {
       Authorization: 'Bearer ' + token,
@@ -68,7 +72,7 @@ export function crearPedido(data, token, idempotencyKey) {
 
 export function consultarPedidos(token, rol) {
   const endpoint = rol === 'CLIENTE' ? '/mios' : '/pendientes'
-  return request(catalogHost + '/api/v1/pedidos' + endpoint, {
+  return request(ordersHost + '/api/v1/pedidos' + endpoint, {
     headers: { Authorization: 'Bearer ' + token },
   })
 }
@@ -100,7 +104,35 @@ export function eliminarProducto(id, token) {
 }
 
 export function consultarPedido(id, token) {
-  return request(catalogHost + '/api/v1/pedidos/' + encodeURIComponent(id), {
+  return request(ordersHost + '/api/v1/pedidos/' + encodeURIComponent(id), {
+    headers: { Authorization: 'Bearer ' + token },
+  })
+}
+
+export function emitirBoleta(pedidoId, token) {
+  return request(boletaHost + '/api/v1/boletas', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token },
+    body: JSON.stringify({ pedidoId: Number(pedidoId) }),
+  })
+}
+
+export function consultarBoleta(id, token) {
+  return request(boletaHost + '/api/v1/boletas/' + encodeURIComponent(id), {
+    headers: { Authorization: 'Bearer ' + token },
+  })
+}
+
+export function generarDetalleBoleta(boletaId, token) {
+  return request(detalleBoletaHost + '/api/v1/detalles-boleta', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token },
+    body: JSON.stringify({ boletaId: Number(boletaId) }),
+  })
+}
+
+export function consultarDetalleBoleta(boletaId, token) {
+  return request(detalleBoletaHost + '/api/v1/detalles-boleta/boleta/' + encodeURIComponent(boletaId), {
     headers: { Authorization: 'Bearer ' + token },
   })
 }
