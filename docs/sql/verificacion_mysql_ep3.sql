@@ -18,7 +18,9 @@ SELECT 'productos', COUNT(*) FROM huertohogar_catalogo.producto
 UNION ALL
 SELECT 'pedidos', COUNT(*) FROM huertohogar_catalogo.pedido
 UNION ALL
-SELECT 'lineas', COUNT(*) FROM huertohogar_catalogo.linea_pedido;
+SELECT 'lineas', COUNT(*) FROM huertohogar_catalogo.linea_pedido
+UNION ALL
+SELECT 'refresh_sesiones', COUNT(*) FROM huertohogar_usuarios.refresh_sesion;
 
 SELECT 'stock_negativo' AS verificacion, COUNT(*) AS incidencias
   FROM huertohogar_catalogo.producto WHERE stock < 0

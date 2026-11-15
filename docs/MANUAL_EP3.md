@@ -26,7 +26,7 @@ Tienda académica de productos ficticios con perfiles CLIENTE, VENDEDOR y ADMINI
 3. Abrir Productos, filtrar por planeta, ampliar detalles y añadir productos disponibles.
 4. Abrir Carrito, ajustar selección y destino. Confirmar pedido: el servicio reserva stock y devuelve un número de orden con estado PENDIENTE.
 5. En Pedidos, consultar órdenes propias y abrir detalle. La operación no equivale a un pago ni a una entrega.
-6. Recargar la pestaña: la sesión sigue vigente hasta su expiración o hasta que cierres sesión.
+6. Recargar la pestaña: el access JWT se conserva y, si caduca, React intenta renovarlo con el refresh token vigente. Al cerrar sesión se limpia la pestaña y se intenta revocar el refresh en el backend. Esta política es de laboratorio, no una garantía de seguridad de producción.
 
 ## 4. VENDEDOR — consulta sin escritura
 

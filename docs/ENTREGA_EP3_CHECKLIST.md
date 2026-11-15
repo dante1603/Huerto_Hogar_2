@@ -12,8 +12,8 @@ Anexo: https://drive.google.com/file/d/1U7bZVSOMwfoYaYly6IcSZ_BvYIgEn4lO/view
 | IE3.1.1 backend + BD | 8% | Entidades JPA, repositorios, servicios, Docker MySQL | MySQL real y persistencia reinicio |
 | IE3.2.1 CRUD/Swagger | 8% | PR #12 integrado | Swagger abierto y captura de operaciones |
 | IE3.2.2 API REST integrada | 6% | React fetch, endpoints Spring, Vite proxy | E2E navegador + MySQL |
-| IE3.3.1 JWT y roles | 6% | Spring Security/BCrypt, PR #14 | Provisión de cuentas de rol y política de renovación |
-| IE3.3.2 sesión persistente | 6% | sessionStorage, timer de caducidad, tests Node | Navegador real y renovación si exigida |
+| IE3.3.1 JWT y roles | 6% | Spring Security/BCrypt, PR #14; renovación rotativa PR #16 | Provisión controlada de cuentas de rol y pruebas finales con MySQL |
+| IE3.3.2 sesión persistente | 6% | sessionStorage, expiración, refresh auto PR #17 y tests Node | Prueba en navegador real, seguridad de almacenamiento y MySQL |
 | IE3.3.3 guardas frontend | 6% | PR #13: admin/vendedor/cliente | Prueba real de tres usuarios y capturas |
 
 ## Entregables institucionales
