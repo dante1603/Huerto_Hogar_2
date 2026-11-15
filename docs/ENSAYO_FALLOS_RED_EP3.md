@@ -5,7 +5,7 @@ Este corte amplía `scripts/e2e_http_fullstack.py` mediante `scripts/fault_proxy
 ## Escenarios verificables
 
 1. **Respuesta PUT perdida tras commit:** el proxy reenvía y recibe del Catálogo la reserva confirmada, pero corta la respuesta. Pedidos consulta GET y confirma con la misma clave. Stock se descuenta exactamente una vez.
-2. **PUT confirmado y GET perdido:** se corta la respuesta de PUT después de reservar, y la solicitud GET de recuperación antes de llegar a Productos. Pedidos devuelve 503 y no publica una orden `INICIADO`.
+2. **PUT confirmado y GET perdido:** se corta la respuesta de PUT después de reservar, y ambos intentos GET de recuperación antes de llegar a Productos (incluido el reintento automático de HttpURLConnection). Pedidos devuelve 503 y no publica una orden `INICIADO`.
 3. **Misma Idempotency-Key simultánea:** seis llamadas POST a Pedidos en paralelo; solo una reserva efectiva, un 201 y cinco 200 con el mismo `pedido.id`.
 4. **Competencia por stock:** cuatro claves distintas intentan reservar tres unidades de un producto con siete disponibles; dos transacciones obtienen 201, dos responden 409, y stock nunca queda negativo.
 5. **Compensación con DELETE remoto ejecutado pero respuesta perdida:** en el runner **efímero**, `E2E_RECONCILIACION=1` habilita el worker cada 1000 ms y TTL de **1 minuto**. Una intención abandonada debe terminar CANCELADA tras reintentar DELETE a la misma referencia, sin reponer stock dos veces. El endpoint público con su clave original responde 409.
@@ -24,3 +24,5 @@ E2E_RECONCILIACION=1 python3 scripts/e2e_http_fullstack.py
 ```
 
 Comprobar logs y SHA del run antes de declarar PASS; el documento no constituye evidencia por sí mismo.
+
+**Optimización CI:** empaquetado y circuito HTTP de fallos se ejecutan antes de la suite 71 tests para detectar y corregir errores de transporte temprano; la PR solo tendrá PASS completo si ambos tramos terminan en verde.

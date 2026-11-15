@@ -227,6 +227,9 @@ def prueba_fallos(proxy):
     print("[FAULT] PUT confirmado sin respuesta y GET perdido; queda INICIADO",
           flush=True)
     proxy.inject("PUT", DROP_AFTER)
+    # HttpURLConnection puede reintentar automaticamente un GET sin respuesta.
+    # Ambos intentos deben perderse para simular una particion real del enlace.
+    proxy.inject("GET", DROP_BEFORE)
     proxy.inject("GET", DROP_BEFORE)
     clave_abandonada = str(uuid.uuid4())
     cuerpo_abandonado = payload(mineral, 1)
@@ -310,7 +313,7 @@ def prueba_fallos(proxy):
         print("[SKIP] Compensacion temporizada exige E2E_RECONCILIACION=1")
 
     check(proxy.injected("PUT", DROP_AFTER) == 2 and
-          proxy.injected("GET", DROP_BEFORE) == 1,
+          proxy.injected("GET", DROP_BEFORE) == 2,
           "Faltaron fallos PUT/GET previstos")
     proxy.assert_empty()
     print("[PASS] Respuestas perdidas + carreras de clave y stock entre procesos",
