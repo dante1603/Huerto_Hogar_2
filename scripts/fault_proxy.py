@@ -25,6 +25,7 @@ class FaultProxy:
         self._planned = defaultdict(deque)
         self._seen = Counter()
         self._faults = Counter()
+        self._upstream_status = Counter()
         owner = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -100,6 +101,8 @@ class FaultProxy:
                 except (OSError, urllib.error.URLError):
                     self.disconnect()
                     return
+                with owner._lock:
+                    owner._upstream_status[(method, status)] += 1
                 if action == DROP_AFTER:
                     self.disconnect()
                     return
@@ -147,6 +150,11 @@ class FaultProxy:
     def injected(self, method, action):
         with self._lock:
             return self._faults[(method, action)]
+
+    def statuses(self, method):
+        with self._lock:
+            return {status: count for (m, status), count in self._upstream_status.items()
+                    if m == method}
 
     def assert_empty(self):
         with self._lock:

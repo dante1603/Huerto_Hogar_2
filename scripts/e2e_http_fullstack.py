@@ -209,8 +209,12 @@ def prueba_fallos(proxy):
     proxy.inject("PUT", DROP_AFTER)
     clave_recuperada = str(uuid.uuid4())
     code, pedido = crear(clave_recuperada, payload(mineral, 1))
-    check(code == 201 and pedido["estado"] == "PENDIENTE",
-          "Timeout PUT aplicado no fue reconciliado")
+    check(code == 201 and isinstance(pedido, dict)
+          and pedido.get("estado") == "PENDIENTE",
+          "Timeout PUT no recuperado: cliente HTTP " + str(code)
+          + ", GET gateway +" + str(proxy.count("GET") - antes_get)
+          + ", PUT upstream " + str(proxy.statuses("PUT"))
+          + ", GET upstream " + str(proxy.statuses("GET")))
     check(proxy.count("GET") > antes_get, "No consulto la misma reserva tras PUT perdido")
     code, misma = crear(clave_recuperada, payload(mineral, 1))
     check(code == 200 and misma["id"] == pedido["id"],
