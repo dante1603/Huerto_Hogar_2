@@ -1,10 +1,10 @@
 # Informe de APIs e Integración — entrega grupal EP3
 
-**Versión 0.9.** Base: controladores Java y cliente HTTP React en integration/fullstack-2026-11-14. **Pruebas REST con H2/MockMvc y compilación React realizadas; faltan navegador y MySQL real.** Basado en anexos 2 y 3 de DSY1104: usar contratos reales, no los ejemplos de Pokémon.
+**Versión 1.0.** Base: controladores Java y cliente HTTP React en integration/fullstack-2026-11-14. **PASS 71 tests Java + circuito REST real entre cinco aplicaciones/H2 en PR #27; faltan navegador y MySQL real.** Basado en anexos 2 y 3 de DSY1104: usar contratos reales, no los ejemplos de Pokémon.
 
 ## 1. Arquitectura
 
-Frontend React/Vite (puerto habitual 5173) → fetch REST JSON → Catálogo Spring Boot (8080) y Usuarios Spring Boot (8081) → JPA → MySQL (dos esquemas en el mismo servidor). En desarrollo, Vite proxy reenvía /api/v1/productos y /api/v1/pedidos al Catálogo; /usuarios-api hacia Usuarios. En hosting real CORS/orígenes deben configurarse.
+Frontend React/Vite (puerto habitual 5173) sigue utilizando las rutas heredadas de Catálogo (8080) y Usuarios (8081). El circuito REST nuevo se comprobó con Usuarios (8081), Productos (8080), Pedidos (8082), Boleta (8083) y Detalle (8084), cada uno en su propio proceso con H2. MySQL real sigue pendiente. En desarrollo, Vite proxy reenvía /api/v1/productos y /api/v1/pedidos al Catálogo; /usuarios-api hacia Usuarios. En hosting real CORS/orígenes deben configurarse.
 
 Las APIs usan prefijo /api/v1 y Swagger en /swagger-ui.html de cada servicio; OpenAPI JSON en /v3/api-docs.
 
@@ -71,7 +71,7 @@ Registro: nombreUsuario, rutUsuario, direccionUsuario, emailUsuario, contrasena.
 
 - CI Java prueba CRUD, autorizaciones, reservas, Idempotency-Key, stock y errores mediante MockMvc y H2.
 - CI React ejecuta tests Node de políticas de roles, sesión, carrito, contratos mock y build de Vite.
-- MySQL real, persistencia tras reinicio, Swagger en ejecución y capturas reales **se comprobarán al final**. Los ensayos H2 no acreditan esos puntos.
+- PR #27 verificó cinco procesos y HTTP real sobre H2 aisladas, incluyendo JWT, stock, idempotencia y consistencia de boletas. MySQL real, persistencia tras reinicio, navegador y capturas visuales de Swagger **se comprobarán al final**.
 - El enunciado también menciona renovación de tokens; ahora se implementaron refresh token rotativo y renovación automática de React. Su persistencia real requiere validación MySQL al final.
 
 ## 6. Capturas y resultados finales — casillas sin falsear
@@ -90,3 +90,10 @@ Referencias complementarias: docs/CONTRATOS_API.md, docs/BD_MODELO_EP3.md, docs/
 
 ### Refresh token
 Login añade refreshToken aleatorio de 256 bits y refreshExpiresInSeconds (86400). Usuarios almacena su SHA-256 y rota el valor al llamar POST /api/v1/auth/refresh. El frontend conserva refresh en sessionStorage de la misma pestaña (riesgo XSS de MVP). POST /api/v1/auth/logout invalida el refresh; JWT de acceso ya emitidos siguen vigentes hasta caducar. No mostrar secretos reales en documentación/capturas.
+
+
+## 7. Ensayo E2E HTTP de cinco procesos (15-11-2026 UTC)
+
+[GitHub Actions 43668577173](https://github.com/dante1603/Huerto_Hogar_2/actions/runs/43668577173) — PASS 71 tests Java + comprobación HTTP `[PASS]` sobre cinco servicios/H2 independientes. Registro/login JWT, creación de Pedido por REST con reserva de stock en Productos, generación de Boleta y Detalle, importes y líneas verificados, duplicados evitados y consultas ajenas rechazadas. Primer intento reveló enmascaramiento 403/409 por Spring Security; PR #27 lo corrigió sin alterar roles ni rutas públicas. Prueba reproducible: `scripts/e2e_http_fullstack.py` y `docs/VERIFICACION_HTTP_EP3.md`.
+
+Pendiente: MySQL 8.4, persistencia/reinicio, red degradada, reconciliación activada, navegador React, Swagger visual, capturas y archivos de entrega.
