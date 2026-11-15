@@ -9,7 +9,7 @@
 | Usuarios | Spring Boot independiente | Cuentas, roles, BCrypt y refresh JWT |
 | Productos | Spring Boot Catálogo, con CRUD y API nueva de reserva | SKU, precio, stock, reservas |
 | Pedidos | Tercer Spring Boot independiente creado en PR #21; aún sin tráfico React | Pedido y líneas en esquema propio proyectado (MySQL pendiente); Catálogo conserva ruta legada |
-| Boleta | Cuarto Spring Boot en rama feat/ep3-boleta-segura-pedidos-20261114, pendiente CI/integración | Boleta única por pedido, identidad y total verificados vía REST |
+| Boleta | Cuarto Spring Boot integrado PR #23, CI H2/MockMvc PASS (6 tests); tráfico React y MySQL pendientes | Boleta única por pedido, identidad y total verificados vía REST |
 | Detalle Boleta | ZIP del compañero, sin integrar ni depurar | Líneas de comprobante, futuro |
 
 ## Contrato ejecutable nuevo en Productos
@@ -71,6 +71,6 @@ La implementación usa **JWT interno efímero** con rol `SERVICIO_PEDIDOS` y fir
 La CI ahora incluye tests MockMvc/H2 del tercer servicio con gateway de Productos simulado. No valida un enlace REST físico ni una BD MySQL real. En el último corte hay que configurar el tercer esquema, puertos y rutas proxy para el cambio de tráfico, más E2E completos.
 
 
-## Corte Boleta (PR de trabajo, aún no validado en red)
+## Corte Boleta (PR #23 integrada en rama de integración; red real pendiente)
 
 El cuarto proceso `backend/boleta` es una adaptación segura del ZIP del compañero: solo `POST /api/v1/boletas` (JWT CLIENTE, `{pedidoId}`) y `GET /api/v1/boletas/{id}` (propietario o staff). El servicio verifica el pedido `PENDIENTE` con su dueño (`backend/pedidos`) utilizando REST y el JWT del cliente; no confía en usuario, precios ni importes suministrados por React. El comprobante ficticio es inmutable, no representa pago ni boleta SII; UNIQUE(pedido_id) impide duplicar emisiones. No se activan rutas React, no se tocan esquemas MySQL y Detalle Boleta sigue fuera de integración.

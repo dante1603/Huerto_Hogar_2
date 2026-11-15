@@ -23,7 +23,7 @@ Anexo: https://drive.google.com/file/d/1U7bZVSOMwfoYaYly6IcSZ_BvYIgEn4lO/view
 | GitHub público frontend | https://github.com/dante1603/Huerto_Hogar_2/tree/integration/fullstack-2026-11-14/frontend/tienda | CÓDIGO DISPONIBLE; confirmar monorepo con docente |
 | GitHub público backend | https://github.com/dante1603/Huerto_Hogar_2/tree/integration/fullstack-2026-11-14/backend | CÓDIGO DISPONIBLE; confirmar monorepo con docente |
 | ZIP limpio frontend | frontend/tienda | PENDIENTE: empaquetar versión definitiva |
-| ZIP limpio backend | backend/catalogo, backend/usuarios y backend/pedidos; Boleta/Detalle aún fuera de integración | PENDIENTE: empaquetar los cinco servicios finales sin secretos |
+| ZIP limpio backend | backend/catalogo, backend/usuarios, backend/pedidos y backend/boleta; Detalle aún fuera de integración | PENDIENTE: empaquetar los cinco servicios finales sin secretos |
 | ERS terminada | docs/ERS_EP3.md | BORRADOR: requiere aprobación de alcance y evidencia |
 | Manual de usuario | docs/MANUAL_EP3.md | BORRADOR: faltan pantallazos |
 | Documentación de API | docs/INFORME_INTEGRACION_EP3.md y docs/CONTRATOS_API.md | PARCIAL: falta volcar al Anexo 3 y capturas Swagger |
@@ -45,7 +45,7 @@ Checklist final: comprobar el mismo commit de GitHub en ZIP, eliminar target/nod
 | Usuarios | Integrado + CI | MySQL, navegador, cuentas de prueba |
 | Productos | Catálogo integrado + reservas internas CI | MySQL, prueba de red, separación definitiva de la ruta legada |
 | Pedidos | Nuevo proceso independiente PR #21 integrado + CI H2 | Reconciliación/compensación, cambio de ruta React, MySQL y E2E |
-| Boleta | Solo ZIP de compañero auditado | Integración segura JWT, vínculo pedido y pruebas |
+| Boleta | Cuarto servicio integrado PR #23, 6/6 MockMvc/H2 | MySQL, HTTP entre procesos y React; no es boleta tributaria |
 | Detalle Boleta | Solo ZIP de compañero auditado | Integración segura, validación de boleta/producto, cálculo de totales |
 
 Se mantiene abierta la issue #19 y la PR #8 draft hacia main; no confundir avance del código con entrega comprobada.
