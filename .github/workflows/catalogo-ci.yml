@@ -31,6 +31,7 @@ jobs:
             backend/usuarios/pom.xml
             backend/pedidos/pom.xml
             backend/boleta/pom.xml
+            backend/detalle-boleta/pom.xml
       - name: Test catálogo
         run: mvn -B -ntp -f backend/catalogo/pom.xml test
       - name: Test Usuarios
@@ -39,3 +40,5 @@ jobs:
         run: mvn -B -ntp -f backend/pedidos/pom.xml test
       - name: Test Boleta independiente
         run: mvn -B -ntp -f backend/boleta/pom.xml test
+      - name: Test Detalle Boleta independiente
+        run: mvn -B -ntp -f backend/detalle-boleta/pom.xml test
