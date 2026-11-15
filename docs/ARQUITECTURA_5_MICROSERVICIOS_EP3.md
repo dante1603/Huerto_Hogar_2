@@ -8,7 +8,7 @@
 |---|---|---|
 | Usuarios | Spring Boot independiente | Cuentas, roles, BCrypt y refresh JWT |
 | Productos | Spring Boot Catálogo, con CRUD y API nueva de reserva | SKU, precio, stock, reservas |
-| Pedidos | Módulo del mismo Catálogo; extracción todavía pendiente | Pedido y líneas, todavía en esquema Catálogo |
+| Pedidos | Tercer Spring Boot independiente creado en PR #21; aún sin tráfico React | Pedido y líneas en esquema propio proyectado (MySQL pendiente); Catálogo conserva ruta legada |
 | Boleta | ZIP BoletaV2 del compañero, sin integrar ni depurar | Boletas y referencia a pedido, futuro |
 | Detalle Boleta | ZIP del compañero, sin integrar ni depurar | Líneas de comprobante, futuro |
 
@@ -38,17 +38,17 @@ Los importes se toman exclusivamente de Productos. La reserva toma locks ordenad
 
 DELETE sobre una reserva activa devuelve stock una sola vez y mantiene la referencia CANCELADA. Si DELETE llega antes de PUT, se crea un registro CANCELADA sin líneas (tombstone): un PUT posterior con ese UUID responde 409. Nunca reutilizar un UUID tras cancelar.
 
-La edición administrativa no puede sobrescribir stock ni eliminar producto durante una reserva activa. El flujo POST /api/v1/pedidos existente **continúa usando la transacción local**: aún no llama esta API ni se ha dividido en procesos.
+La edición administrativa no puede sobrescribir stock ni eliminar producto durante una reserva activa. El flujo POST /api/v1/pedidos **del Catálogo heredado** sigue usando su transacción local; el nuevo proyecto backend/pedidos consume esta API interna, pero aún no recibe tráfico de la tienda.
 
 ## Invariante para la extracción posterior
 
-El servicio independiente Pedidos debe invocar PUT, persistir el pedido local, y compensar con DELETE si falla su commit; ante timeout debe primero consultar GET con el mismo UUID, nunca crear uno nuevo. Esto es una saga, **no una transacción distribuida**. Se requieren pruebas de errores remotos, reintentos concurrentes, compensación y reconciliación antes de mover los pedidos.
+El servicio backend/pedidos ya registra intención local antes de PUT, persiste el pedido cuando recibe snapshot y consulta GET tras timeout con el mismo UUID. **No hay transacción distribuida**. El siguiente corte debe añadir recuperación periódica de intenciones abandonadas y compensación/expiración segura; no cancelar automáticamente cuando el commit remoto/local es ambiguo. Antes de cambiar rutas se requieren E2E, pruebas de concurrencia y MySQL.
 
 Los servicios Boleta y Detalle Boleta deben validar existencia de pedido y copiar precios de snapshots autorizados, nunca de campos libres del cliente. Los ZIP del compañero contienen API CRUD aprovechable, pero Boleta trae credencial literal y ambos carecen de JWT: no trasladar secretos ni publicar esas APIs sin seguridad.
 
 ## Límites de verificación
 
-Tests MockMvc/H2 y CI comprueban este contrato dentro de Productos. No se ha ejecutado MySQL real, no hay cliente remoto independiente, no se ha emitido token de servicio por un runtime de Pedidos, ni se ha probado el sistema completo en navegador. Esto corresponde al último corte acordado para MySQL, o a futuras misiones para el resto.
+Tests MockMvc/H2 y CI comprueban los contratos de Productos y el nuevo proceso Pedidos con gateway remoto simulado. No se ha ejecutado MySQL real ni un cliente remoto entre procesos, ni se ha probado la emisión del token de servicio en ejecución distribuida o los recorridos completos de navegador. Esto corresponde al último corte acordado para MySQL, o a futuras misiones para el resto.
 
 Auditoría y seguimiento: https://github.com/dante1603/Huerto_Hogar_2/issues/19
 
