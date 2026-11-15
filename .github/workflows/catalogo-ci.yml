@@ -29,7 +29,10 @@ jobs:
           cache-dependency-path: |
             backend/catalogo/pom.xml
             backend/usuarios/pom.xml
+            backend/pedidos/pom.xml
       - name: Test catálogo
         run: mvn -B -ntp -f backend/catalogo/pom.xml test
       - name: Test Usuarios
         run: mvn -B -ntp -f backend/usuarios/pom.xml test
+      - name: Test Pedidos independiente
+        run: mvn -B -ntp -f backend/pedidos/pom.xml test
