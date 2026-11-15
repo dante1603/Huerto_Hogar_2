@@ -1,6 +1,6 @@
 # HuertoHogar × Galaxym — Catálogo API (primer incremento)
 
-Microservicio **Spring Boot 4.1.1 / Java 17+** y API REST **GET de productos**.
+Microservicio **Spring Boot 4.1.1 / Java 17+** de Catálogo con CRUD, Pedidos legado y nueva frontera REST de reservas.
 Este directorio es independiente del frontend HTML/React y del microservicio `Usuarios` que ya existe en los archivos del equipo.
 
 ## Qué funciona en este incremento
@@ -13,7 +13,7 @@ Este directorio es independiente del frontend HTML/React y del microservicio `Us
 - Swagger UI en `/swagger-ui.html`; especificación OpenAPI en `/v3/api-docs`.
 - Tests HTTP con MockMvc + persistencia H2.
 
-**No incluye aún:** CRUD administrativo, autenticación JWT, sincronización de cofres de Galaxym, compras, reservas de stock, pagos o tracking. No exponer operaciones de escritura sin seguridad.
+**Incluye:** CRUD de Productos, JWT, Pedidos legado, reserva idempotente. **No incluye:** pagos, tracking ni Pedidos como proceso independiente.
 
 ## Ejecutar localmente
 
@@ -96,3 +96,8 @@ Terminal Usuarios debe recibir la **misma** clave, no generar otra. La alternati
 ### Alcances de las pruebas
 
 Los tests automatizados usan H2, usuarios simulados mediante JWT firmados en el test, nunca datos reales. No acreditan despliegue, conexión MySQL real ni simultaneidad bajo carga. No iniciar pedidos con datos reales antes de control de abuso y autenticación completos.
+
+
+## Nuevo contrato de inventario para el futuro servicio Pedidos
+
+PUT/GET/DELETE /api/v1/interno/reservas/{referencia}, JWT SERVICIO_PEDIDOS. PUT devuelve precios confirmados, GET reconcilia red/timeout, DELETE compensa una sola vez y bloquea reservas tardías (tombstone). El módulo Pedidos legado conserva transacción local: **la extracción no está terminada**. Revisar docs/ARQUITECTURA_5_MICROSERVICIOS_EP3.md. MySQL se verifica en el corte final.

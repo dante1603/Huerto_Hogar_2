@@ -36,3 +36,8 @@
 ## Corte actual integrado
 
 PR #12 CRUD, #13 rutas por rol, #14 protección de pedidos, #16 refresh JWT y #17 renovación React están integradas. ERS, manual y modelo de datos preparados como borradores. **No hay prueba MySQL real, capturas ni ZIP definitivos aún.**
+
+
+## Alcance del docente: cinco microservicios independientes
+
+Confirmado por Dante: Usuarios, Productos, Pedidos, Boleta, Detalle Boleta. Hay dos procesos en el repo (Usuarios y Catálogo), y Pedidos todavía es parte de Catálogo. Primer corte de extracción: API interna de reservas idempotentes en Productos con JWT SERVICIO_PEDIDOS, snapshots y cancelación compensatoria. Siguiente corte: proceso Pedidos independiente con cliente REST, timeout y saga; luego asegurar e integrar ZIP Boleta y Detalle. MySQL real permanece diferido hasta validación final.

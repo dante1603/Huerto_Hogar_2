@@ -118,3 +118,8 @@ Este procedimiento requiere ejecución humana autorizada y no está automatizado
 La tabla JPA refresh_sesion (microservicio Usuarios) agrega: id autoincremental PK, token_hash varchar(64) único y no nulo, usuario_id bigint no nulo, expira_en timestamp/fecha no nulo. El token aleatorio de 256 bits se entrega una sola vez y se persiste únicamente su digest SHA-256. La renovación usa lock pesimista, consume la sesión anterior y registra otra en una transacción. El vínculo usuario_id es lógico (sin @ManyToOne/FK explícita).
 
 **Pendiente final:** comprobar creación real de refresh_sesion en MySQL, índices, fecha de expiración, rotación bajo solicitudes concurrentes y comportamiento después de reiniciar Spring.
+
+
+## Nueva persistencia de reservas de Productos (corte 5 microservicios)
+
+Entidades JPA: **reserva_stock** (referencia UUID PK, huella_solicitud SHA-256, estado RESERVADA/CANCELADA, total, creada_en) y **linea_reserva** (FK reserva_referencia, referencia lógica producto_id, nombre_producto, cantidad, precio_unitario, subtotal). Un PUT crea reserva, disminuye stock y guarda snapshots en la **misma transacción local de Productos**. DELETE marca CANCELADA y restaura stock una sola vez; cancelación previa crea tombstone. No es una transacción distribuida Pedidos-Productos. Esquema físico MySQL pendiente de validar al final.

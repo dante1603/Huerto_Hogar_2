@@ -65,6 +65,14 @@ public class Producto {
         this.stock -= cantidad;
     }
 
+    /** Compensar una reserva; siempre bajo lock de fila y transaccion. */
+    public void reponer(int cantidad) {
+        if (cantidad <= 0 || stock > Integer.MAX_VALUE - cantidad) {
+            throw new IllegalArgumentException("Reposicion invalida");
+        }
+        this.stock += cantidad;
+    }
+
     public Long getId() { return id; }
     public String getSku() { return sku; }
     public String getNombre() { return nombre; }

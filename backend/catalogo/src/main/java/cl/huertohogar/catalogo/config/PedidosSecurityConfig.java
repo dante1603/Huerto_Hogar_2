@@ -60,7 +60,7 @@ public class PedidosSecurityConfig {
         var converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
             String rol = jwt.getClaimAsString("rol");
-            if (!List.of("CLIENTE", "VENDEDOR", "ADMINISTRADOR").contains(rol)) {
+            if (!List.of("CLIENTE", "VENDEDOR", "ADMINISTRADOR", "SERVICIO_PEDIDOS").contains(rol)) {
                 return List.<GrantedAuthority>of();
             }
             return List.<GrantedAuthority>of(new SimpleGrantedAuthority("ROLE_" + rol));
@@ -81,6 +81,10 @@ public class PedidosSecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/productos/*").hasRole("ADMINISTRADOR")
                 .requestMatchers(HttpMethod.GET, "/swagger-ui.html", "/swagger-ui/**",
                     "/v3/api-docs", "/v3/api-docs/**").permitAll()
+                // Un rol de servicio firmado, nunca asignable mediante registro publico.
+                .requestMatchers(HttpMethod.GET, "/api/v1/interno/reservas/*").hasRole("SERVICIO_PEDIDOS")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/interno/reservas/*").hasRole("SERVICIO_PEDIDOS")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/interno/reservas/*").hasRole("SERVICIO_PEDIDOS")
                 .requestMatchers(HttpMethod.POST, "/api/v1/pedidos").hasRole("CLIENTE")
                 .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/mios").hasRole("CLIENTE")
                 .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/pendientes")
