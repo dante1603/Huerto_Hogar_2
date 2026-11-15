@@ -10,7 +10,7 @@
 | Productos | Spring Boot Catálogo, con CRUD y API nueva de reserva | SKU, precio, stock, reservas |
 | Pedidos | Tercer Spring Boot independiente creado en PR #21; aún sin tráfico React | Pedido y líneas en esquema propio proyectado (MySQL pendiente); Catálogo conserva ruta legada |
 | Boleta | Cuarto Spring Boot integrado PR #23, CI H2/MockMvc PASS (6 tests); tráfico React y MySQL pendientes | Boleta única por pedido, identidad y total verificados vía REST |
-| Detalle Boleta | Quinto Spring Boot creado: contrato POST/GET JWT + validación Boleta/Pedidos; CI y MySQL por verificar | Líneas inmutables en esquema propio proyectado |
+| Detalle Boleta | Quinto Spring Boot integrado PR #25, CI H2/MockMvc PASS (9 tests); MySQL y REST real pendientes | Líneas inmutables y validadas en esquema propio proyectado |
 
 ## Contrato ejecutable nuevo en Productos
 
@@ -81,3 +81,10 @@ El cuarto proceso `backend/boleta` es una adaptación segura del ZIP del compañ
 `backend/detalle-boleta` implementa `POST /api/v1/detalles-boleta` con solo `{boletaId}`, GET por línea o por boleta, JWT CLIENTE propietario/roles de lectura. Consulta Boleta (propietaria de la cabecera) y Pedidos (propietario del snapshot del pedido) por REST con JWT delegado; rechaza cifras suministradas por frontend, comprobantes ajenos y cualquier diferencia entre importes.
 
 La escritura de todas las líneas se realiza bajo una transacción local y `UNIQUE(id_boleta,numero_linea)` evita líneas duplicadas. Una carrera se resuelve releyendo la ganadora; los documentos no se pueden editar ni eliminar. **No hay transacciones distribuidas ni E2E real**, y no se activó React ni MySQL. El uso de JWT delegado y la firma simétrica compartida son compromisos de laboratorio, no una postura definitiva de despliegue.
+
+
+## Compensación de intenciones abandonadas: código opt-in (corte siguiente)
+
+La recuperación automática anterior a MySQL está **desactivada por defecto**. `INICIADO` con más de 60 minutos puede entrar a `CANCELANDO` con una transición local transaccional antes de ejecutar DELETE idempotente de Productos. El estado `CANCELADO` solo se persiste **después** de HTTP 204; un timeout deja `CANCELANDO` y reintenta con la misma referencia. `confirmar()` rechaza pedidos en cancelación, evitando pedidos confirmados con stock ya repuesto. Tras cancelar, el cliente necesita otra Idempotency-Key; no se intenta re-reservar ni publicar un pedido ficticio.
+
+Activación manual tras E2E de red/concurrencia y MySQL: `RECONCILIACION_HABILITADA=true`, `RECONCILIACION_CADUCIDAD_MINUTOS=60` (mínimo efectivo un minuto). **No afirmar seguridad distribuida total** antes de validar situaciones de caída, carrera y timeouts en procesos reales. El reconciliador no es una saga comercial completa ni prueba de pago.

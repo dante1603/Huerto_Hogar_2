@@ -84,3 +84,8 @@ Se obtiene snapshot de `backend/pedidos` mediante el JWT del cliente delegado. N
 | `/api/v1/detalles-boleta/{id}` | GET | Propietario/STAFF | Una línea verificada o 404 |
 
 No existe POST arbitrario de cantidades, precios ni `idProducto`; se extraen de Pedidos después de validar Boleta mediante REST autenticado. `UNIQUE(id_boleta, numero_linea)` y transacción local garantizan una sola copia de cada posición. No es un documento tributario ni indica pago. MySQL, E2E real y cambios a tráfico React aún están pendientes.
+
+
+## Estados de Pedidos para expiracion opt-in
+
+`INICIADO → CANCELANDO → CANCELADO` cuando una intención envejece y el reconciliador opcional solicita DELETE a Productos. La transición a CANCELANDO se confirma localmente antes de REST, bloqueando `PENDIENTE` si llega una confirmación tardía. El último estado solo sucede cuando DELETE termina correctamente. Error de red conserva CANCELANDO para retry seguro. `PENDIENTE` permanece como pedido reservado: no se cancela automáticamente. Activación por entorno explícita tras E2E con MySQL.
