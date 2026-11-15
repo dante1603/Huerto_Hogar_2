@@ -374,8 +374,11 @@ def ejecutar():
             for nombre, registro in registros.items():
                 print("-- " + nombre + " --", file=sys.stderr)
                 if registro.exists():
-                    print("\n".join(registro.read_text(errors="replace")
-                                    .splitlines()[-15:]), file=sys.stderr)
+                    lineas = registro.read_text(errors="replace").splitlines()
+                    lineas = [l for l in lineas if "Authorization" not in l
+                              and "Bearer " not in l]
+                    print("\n".join(lineas[-(70 if nombre == "pedidos" else 15):]),
+                          file=sys.stderr)
             raise
         finally:
             for proc in processes:

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
 
 /** Interfaz de red: los errores ambiguos no se convierten en falsas reservas fallidas. */
@@ -34,6 +35,10 @@ public class ProductosHttpGateway implements ProductoReservaGateway {
             throw new ReservaIndeterminadaException(e);
         } catch (RestClientResponseException e) {
             throw mapear(e);
+        } catch (RestClientException e) {
+            // Respuesta perdida o transporte ambiguo (sin status HTTP verificable).
+            // Consultar la MISMA referencia antes de declarar fallo.
+            throw new ReservaIndeterminadaException(e);
         }
     }
     @Override
@@ -46,6 +51,10 @@ public class ProductosHttpGateway implements ProductoReservaGateway {
             throw new ReservaIndeterminadaException(e);
         } catch (RestClientResponseException e) {
             throw mapear(e);
+        } catch (RestClientException e) {
+            // Respuesta perdida o transporte ambiguo (sin status HTTP verificable).
+            // Consultar la MISMA referencia antes de declarar fallo.
+            throw new ReservaIndeterminadaException(e);
         }
     }
     @Override
@@ -60,6 +69,9 @@ public class ProductosHttpGateway implements ProductoReservaGateway {
             // Un fallo remoto NO autoriza a marcar CANCELADO.
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
                 "No se ha confirmado la compensacion de stock");
+        } catch (RestClientException e) {
+            // Si DELETE pudo ejecutarse, repetimos la misma referencia luego.
+            throw new ReservaIndeterminadaException(e);
         }
     }
     private static ResponseStatusException mapear(RestClientResponseException e) {
