@@ -93,3 +93,11 @@ La administración real usa POST, PUT y DELETE /api/v1/productos con JWT ADMINIS
 La sesión persiste en sessionStorage durante recargas de la misma pestaña, con limpieza al vencer. No existe renovación del JWT todavía; no afirmar persistencia entre reinicios del navegador. Manipular el rol guardado en sessionStorage no aumenta privilegios en Spring Security.
 
 Pruebas de roles, sesión, API y compilación se ejecutan con npm test y npm run build. Quedan para el último corte la prueba con MySQL, navegador real, cuentas privilegiadas y capturas de Swagger.
+
+## Renovación JWT — corte EP3
+
+El servicio Usuarios entrega un JWT con expiración de 30 minutos y un refresh token opaco de 256 bits con vencimiento de 24 horas. La tabla JPA refresh_sesion persiste exclusivamente SHA-256 de la credencial; el token se rota tras cada renovación y puede revocarse con POST /api/v1/auth/logout. El frontend trata de renovar antes de la expiración y después de recargas de la misma pestaña.
+
+**Limitación de seguridad del MVP:** el refresh token se guarda en sessionStorage y por tanto es accesible a JavaScript. No asumir producción segura sin una revisión de XSS, CSP, cookies HttpOnly/CSRF o rediseño del manejo de sesión. La revocación de refresh impide nuevas renovaciones, **pero no invalida instantáneamente JWT de acceso ya emitidos**. En un despliegue real se requeriría endurecimiento adicional.
+
+Tests Node verifican serialización/expiración y contrato REST de refresh/logout; tests MockMvc/H2 verifican rotación y rechazo de reutilización. Persistencia MySQL real y recuperación en navegador quedan para la validación final.

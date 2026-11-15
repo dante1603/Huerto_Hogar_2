@@ -17,7 +17,7 @@ React (catálogo, carrito, cuenta, historial, paneles por rol) ↔ REST con API 
 
 ### Fuera del alcance del MVP evaluable
 
-Pagos reales, generación fiscal de boletas, reparto Galaxym, posición en vivo, mapa orbital operativo, sistemas de inventario del juego, reseñas, fidelización, entregas completas y renovación JWT (pendiente de definir/implementar). Los seis modelos visuales provisionales no acreditan indicadores de EP3.
+Pagos reales, generación fiscal de boletas, reparto Galaxym, posición en vivo, mapa orbital operativo, sistemas de inventario del juego, reseñas, fidelización, entregas completas y despliegue público y endurecimiento de sesiones para producción. Los seis modelos visuales provisionales no acreditan indicadores de EP3.
 
 ## 2. Perfiles y permisos
 
@@ -45,7 +45,7 @@ La UI restringe rutas y acciones; **Spring Security verifica realmente JWT y rol
 | RF-09 | ADMINISTRADOR crea, actualiza y elimina productos; DELETE con historial devuelve 409 | Implementado, MockMvc/H2 y UI React |
 | RF-10 | Documentar endpoints con Swagger/OpenAPI y comunicar frontend/backend por REST | Configurado; prueba visual y E2E pendiente |
 | RF-11 | Mantener persistencia real en MySQL tras reiniciar servicios | **Pendiente de validar** (postergado expresamente al corte final) |
-| RF-12 | Renovar credenciales/tokens de forma segura cuando corresponda | **Pendiente**; no se presenta como logrado |
+| RF-12 | Renovar JWT mediante credencial opaca de un solo uso, rotación y revocación | **Implementado en código**, pruebas H2/Node; MySQL real y endurecimiento de producción pendientes |
 
 ## 4. Requisitos no funcionales
 

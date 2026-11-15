@@ -112,3 +112,9 @@ Este procedimiento requiere ejecución humana autorizada y no está automatizado
 - Comparar estructuras reales con JPA; corregir discrepancias ANTES de reemplazar ddl-auto=update por migraciones/validate.
 
 **Pendiente de aceptación:** MySQL no se ha iniciado ni verificado como parte de esta preparación.
+
+## 7. Sesiones de renovación añadidas a Usuarios
+
+La tabla JPA refresh_sesion (microservicio Usuarios) agrega: id autoincremental PK, token_hash varchar(64) único y no nulo, usuario_id bigint no nulo, expira_en timestamp/fecha no nulo. El token aleatorio de 256 bits se entrega una sola vez y se persiste únicamente su digest SHA-256. La renovación usa lock pesimista, consume la sesión anterior y registra otra en una transacción. El vínculo usuario_id es lógico (sin @ManyToOne/FK explícita).
+
+**Pendiente final:** comprobar creación real de refresh_sesion en MySQL, índices, fecha de expiración, rotación bajo solicitudes concurrentes y comportamiento después de reiniciar Spring.
