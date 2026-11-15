@@ -73,3 +73,14 @@ PUT/GET/DELETE /api/v1/interno/reservas/{referencia} requieren JWT SERVICIO_PEDI
 | `/api/v1/boletas/{id}` | GET | JWT propietario o VENDEDOR/ADMINISTRADOR | 200, 404 si otro cliente |
 
 Se obtiene snapshot de `backend/pedidos` mediante el JWT del cliente delegado. No se aceptan usuario/total/precio por JSON. El documento es academico, inmutable y NO tributario; no prueba pago. Pedidos independiente no recibe aun trafico desde React. E2E real/MySQL pendientes.
+
+
+## Contrato Detalle Boleta (quinto servicio; integración de código en evaluación)
+
+| Ruta | Método | Autorización | Resultado |
+|---|---|---|---|
+| `/api/v1/detalles-boleta` | POST | JWT CLIENTE | `{boletaId}`; 201 creación/200 reintento, `List<DetalleResponse>`, 404 ajeno, 503 snapshot incoherente |
+| `/api/v1/detalles-boleta/boleta/{boletaId}` | GET | Propietario/STAFF | Líneas completas o 404 si aún no generadas |
+| `/api/v1/detalles-boleta/{id}` | GET | Propietario/STAFF | Una línea verificada o 404 |
+
+No existe POST arbitrario de cantidades, precios ni `idProducto`; se extraen de Pedidos después de validar Boleta mediante REST autenticado. `UNIQUE(id_boleta, numero_linea)` y transacción local garantizan una sola copia de cada posición. No es un documento tributario ni indica pago. MySQL, E2E real y cambios a tráfico React aún están pendientes.

@@ -10,7 +10,7 @@
 | Productos | Spring Boot Catálogo, con CRUD y API nueva de reserva | SKU, precio, stock, reservas |
 | Pedidos | Tercer Spring Boot independiente creado en PR #21; aún sin tráfico React | Pedido y líneas en esquema propio proyectado (MySQL pendiente); Catálogo conserva ruta legada |
 | Boleta | Cuarto Spring Boot integrado PR #23, CI H2/MockMvc PASS (6 tests); tráfico React y MySQL pendientes | Boleta única por pedido, identidad y total verificados vía REST |
-| Detalle Boleta | ZIP del compañero, sin integrar ni depurar | Líneas de comprobante, futuro |
+| Detalle Boleta | Quinto Spring Boot creado: contrato POST/GET JWT + validación Boleta/Pedidos; CI y MySQL por verificar | Líneas inmutables en esquema propio proyectado |
 
 ## Contrato ejecutable nuevo en Productos
 
@@ -74,3 +74,10 @@ La CI ahora incluye tests MockMvc/H2 del tercer servicio con gateway de Producto
 ## Corte Boleta (PR #23 integrada en rama de integración; red real pendiente)
 
 El cuarto proceso `backend/boleta` es una adaptación segura del ZIP del compañero: solo `POST /api/v1/boletas` (JWT CLIENTE, `{pedidoId}`) y `GET /api/v1/boletas/{id}` (propietario o staff). El servicio verifica el pedido `PENDIENTE` con su dueño (`backend/pedidos`) utilizando REST y el JWT del cliente; no confía en usuario, precios ni importes suministrados por React. El comprobante ficticio es inmutable, no representa pago ni boleta SII; UNIQUE(pedido_id) impide duplicar emisiones. No se activan rutas React, no se tocan esquemas MySQL y Detalle Boleta sigue fuera de integración.
+
+
+## Quinto corte: Detalle Boleta independiente
+
+`backend/detalle-boleta` implementa `POST /api/v1/detalles-boleta` con solo `{boletaId}`, GET por línea o por boleta, JWT CLIENTE propietario/roles de lectura. Consulta Boleta (propietaria de la cabecera) y Pedidos (propietario del snapshot del pedido) por REST con JWT delegado; rechaza cifras suministradas por frontend, comprobantes ajenos y cualquier diferencia entre importes.
+
+La escritura de todas las líneas se realiza bajo una transacción local y `UNIQUE(id_boleta,numero_linea)` evita líneas duplicadas. Una carrera se resuelve releyendo la ganadora; los documentos no se pueden editar ni eliminar. **No hay transacciones distribuidas ni E2E real**, y no se activó React ni MySQL. El uso de JWT delegado y la firma simétrica compartida son compromisos de laboratorio, no una postura definitiva de despliegue.
