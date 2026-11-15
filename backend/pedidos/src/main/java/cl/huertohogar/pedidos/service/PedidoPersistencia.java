@@ -5,6 +5,8 @@ import cl.huertohogar.pedidos.domain.Pedido;
 import cl.huertohogar.pedidos.persistence.PedidoRepository;
 import cl.huertohogar.pedidos.remote.ReservaRemota;
 import java.util.List;
+import java.time.Instant;
+import java.util.stream.Stream;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,10 +32,51 @@ public class PedidoPersistencia {
     public PedidoResponse confirmar(Long id,ReservaRemota snapshot){
         Pedido p=pedidos.findBloqueado(id)
             .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Pedido inexistente"));
-        if(p.getEstado()!=EstadoPedido.PENDIENTE)p.confirmar(snapshot);
+        if (p.getEstado() == EstadoPedido.INICIADO) p.confirmar(snapshot);
+        else if (p.getEstado() != EstadoPedido.PENDIENTE)
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "Intento en cancelacion; no puede confirmar una reserva");
         pedidos.flush();
         return PedidoResponse.desde(p);
     }
+    // Se consultan referencias, no se mantienen locks SQL durante llamadas HTTP.
+    @Transactional(readOnly=true)
+    public List<Long> candidatas(Instant corte) {
+        return Stream.concat(
+                pedidos.findTop20ByEstadoAndCreadoEnBeforeOrderByIdAsc(EstadoPedido.INICIADO, corte)
+                    .stream(),
+                pedidos.findTop20ByEstadoOrderByIdAsc(EstadoPedido.CANCELANDO).stream())
+            .map(Pedido::getId).distinct().toList();
+    }
+
+    // Commit de CANCELANDO ANTES de DELETE remoto: impide confirmacion tardia.
+    @Transactional
+    public String iniciarCancelacion(Long id, Instant corte) {
+        Pedido p = pedidos.findBloqueado(id).orElse(null);
+        if (p == null) return null;
+        if (p.getEstado() == EstadoPedido.CANCELANDO) return p.getReferenciaReserva();
+        if (p.getEstado() != EstadoPedido.INICIADO || !p.getCreadoEn().isBefore(corte))
+            return null;
+        p.iniciarCancelacion();
+        pedidos.flush();
+        return p.getReferenciaReserva();
+    }
+
+    @Transactional
+    public void finalizarCancelacion(Long id, String ref) {
+        Pedido p = pedidos.findBloqueado(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                "Intento inexistente"));
+        if (!p.getReferenciaReserva().equals(ref))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Referencia ajena");
+        if (p.getEstado() == EstadoPedido.CANCELADO) return;
+        if (p.getEstado() != EstadoPedido.CANCELANDO)
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "Intento no cancelable");
+        p.finalizarCancelacion();
+        pedidos.flush();
+    }
+
     @Transactional(readOnly=true)
     public PedidoResponse confirmado(Long id){
         Pedido p=pedidos.findById(id)

@@ -37,7 +37,19 @@ public class Pedido {
         this.clienteId=clienteId;claveIdempotencia=clave;referenciaReserva=referencia;
         huellaSolicitud=huella;planetaDestino=destino;creadoEn=Instant.now();
     }
+    public void iniciarCancelacion() {
+        if (estado != EstadoPedido.INICIADO)
+            throw new IllegalStateException("Solo INICIADO puede expirar");
+        estado = EstadoPedido.CANCELANDO;
+    }
+    public void finalizarCancelacion() {
+        if (estado != EstadoPedido.CANCELANDO)
+            throw new IllegalStateException("No existe cancelacion pendiente");
+        estado = EstadoPedido.CANCELADO;
+    }
     public void confirmar(ReservaRemota reserva) {
+        if (estado != EstadoPedido.INICIADO && estado != EstadoPedido.PENDIENTE)
+            throw new IllegalStateException("Pedido en cancelacion: no se puede confirmar");
         if (estado==EstadoPedido.PENDIENTE) return;
         if (!referenciaReserva.equals(reserva.referencia()) || !"RESERVADA".equals(reserva.estado()))
             throw new IllegalStateException("Reserva ajena o cancelada");

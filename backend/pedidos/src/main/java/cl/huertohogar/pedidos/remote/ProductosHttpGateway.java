@@ -48,6 +48,20 @@ public class ProductosHttpGateway implements ProductoReservaGateway {
             throw mapear(e);
         }
     }
+    @Override
+    public void cancelar(String referencia) {
+        try {
+            client.delete().uri("/api/v1/interno/reservas/{referencia}", referencia)
+                .header("Authorization", "Bearer " + token.emitir())
+                .retrieve().toBodilessEntity();
+        } catch (ResourceAccessException e) {
+            throw new ReservaIndeterminadaException(e);
+        } catch (RestClientResponseException e) {
+            // Un fallo remoto NO autoriza a marcar CANCELADO.
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                "No se ha confirmado la compensacion de stock");
+        }
+    }
     private static ResponseStatusException mapear(RestClientResponseException e) {
         int status=e.getStatusCode().value();
         if(status==400 || status==404 || status==409)

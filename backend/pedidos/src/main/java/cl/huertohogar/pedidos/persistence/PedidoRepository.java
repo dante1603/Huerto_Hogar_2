@@ -3,6 +3,7 @@ import cl.huertohogar.pedidos.domain.EstadoPedido;
 import cl.huertohogar.pedidos.domain.Pedido;
 import jakarta.persistence.LockModeType;
 import java.util.List;
+import java.time.Instant;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -13,6 +14,8 @@ public interface PedidoRepository extends JpaRepository<Pedido,Long> {
     Optional<Pedido> findByClienteIdAndClaveIdempotencia(Long clienteId,String claveIdempotencia);
     List<Pedido> findByClienteIdAndEstadoOrderByIdDesc(Long clienteId,EstadoPedido estado);
     List<Pedido> findByEstadoOrderByIdDesc(EstadoPedido estado);
+    List<Pedido> findTop20ByEstadoAndCreadoEnBeforeOrderByIdAsc(EstadoPedido estado, Instant antes);
+    List<Pedido> findTop20ByEstadoOrderByIdAsc(EstadoPedido estado);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Pedido p where p.id=:id")
     Optional<Pedido> findBloqueado(@Param("id") Long id);
