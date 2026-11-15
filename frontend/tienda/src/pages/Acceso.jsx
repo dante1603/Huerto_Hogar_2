@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { activeRole, homeForRole } from '../lib/roles.js'
 import { loginUsuario, registrarUsuario } from '../lib/api.js'
 
 export default function Acceso({ session, onAuthenticated, onLogout }) {
@@ -40,8 +42,8 @@ export default function Acceso({ session, onAuthenticated, onLogout }) {
       {session ? <>
         <h1>Sesión iniciada</h1>
         <p>Usuario #{session.idUsuario} · {session.rolUsuario}</p>
-        <p className="small">El token permanece en esta pestaña mientras la sesión esté vigente. Ya puedes reservar productos mediante pedidos; el repartidor todavía no recibe misiones en Galaxym.</p>
-        <button type="button" className="button button-primary" onClick={onLogout}>Cerrar sesión</button>
+        <p className="small">El token permanece en esta pestaña mientras la sesión esté vigente. Los permisos dependen del rol y los verifica el backend. El token no sale de esta pestaña salvo hacia las API autorizadas.</p>
+        <div className="product-actions"><Link className="button button-primary" to={homeForRole(activeRole(session))}>Ir a mi área</Link><button type="button" className="button button-quiet" onClick={onLogout}>Cerrar sesión</button></div>
       </> : <>
         <h1>{mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}</h1>
         <div className="filter-bar"><button className={mode === 'login' ? 'chip selected' : 'chip'} type="button" onClick={() => { setMode('login'); setStatus('') }}>Ingresar</button><button className={mode === 'registro' ? 'chip selected' : 'chip'} type="button" onClick={() => { setMode('registro'); setStatus('') }}>Registrarse</button></div>
