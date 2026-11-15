@@ -41,6 +41,32 @@ class FaultProxy:
             def do_DELETE(self):
                 self.forward("DELETE")
 
+            def read_payload(self):
+                # HttpURLConnection/Spring Boot puede enviar Transfer-Encoding: chunked,
+                # no Content-Length. urllib vuelve a enviar el cuerpo normalizado.
+                encoding = self.headers.get("Transfer-Encoding", "").lower()
+                if "chunked" in encoding:
+                    data = bytearray()
+                    while True:
+                        line = self.rfile.readline(128)
+                        if not line:
+                            raise ConnectionError("Chunk HTTP cortado")
+                        length = int(line.split(b";", 1)[0].strip(), 16)
+                        if length < 0 or length > 1024 * 1024 or len(data) + length > 1024 * 1024:
+                            raise ValueError("Cuerpo HTTP de prueba excede el limite")
+                        if length == 0:
+                            while True:
+                                trailer = self.rfile.readline(8192)
+                                if trailer in (b"\r\n", b"\n", b""):
+                                    break
+                            return bytes(data)
+                        piece = self.rfile.read(length)
+                        if len(piece) != length or self.rfile.read(2) != b"\r\n":
+                            raise ConnectionError("Chunk HTTP incompleto")
+                        data.extend(piece)
+                length = int(self.headers.get("Content-Length", "0"))
+                return self.rfile.read(length) if length else None
+
             def forward(self, method):
                 with owner._lock:
                     owner._seen[method] += 1
@@ -48,8 +74,7 @@ class FaultProxy:
                               if owner._planned[method] else None)
                     if action:
                         owner._faults[(method, action)] += 1
-                length = int(self.headers.get("Content-Length", "0"))
-                body = self.rfile.read(length) if length else None
+                body = self.read_payload()
                 if action == DROP_BEFORE:
                     self.disconnect()
                     return
