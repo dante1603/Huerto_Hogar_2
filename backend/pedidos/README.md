@@ -28,3 +28,10 @@ Pruebas automatizadas: `mvn -B -ntp -f backend/pedidos/pom.xml test`. Los tests 
 Hay una diferencia fundamental respecto de Catálogo: ahora la transacción de reserva de stock vive en Productos y la transacción de confirmación del pedido vive en Pedidos. Eso crea un protocolo de saga que necesita casos de recuperación, expiración de intenciones y pruebas E2E antes del cambio de rutas. El estado `INICIADO` nunca es una compra finalizada.
 
 **Pendientes:** reconciliador programado, compensación controlada, integraciones reales con Boleta/Detalle Boleta, MySQL para el tercer esquema, cambio de proxy, pruebas de red y navegador. Sin datos de MySQL ni credenciales en git.
+
+
+## Corte de expiracion segura de intenciones
+
+`INICIADO` no se cancela desde la solicitud HTTP cuando hay un timeout ambiguo. Un reconciliador opt-in (`RECONCILIACION_HABILITADA=true`, **desactivado por defecto**) toma intenciones con más de 60 minutos y las pasa transaccionalmente a `CANCELANDO` antes de llamar `DELETE /api/v1/interno/reservas/{referencia}` en Productos. El DELETE crea tombstone si PUT no habia llegado, y repone stock una sola vez si la reserva existia. Solo tras confirmar HTTP 204 marca `CANCELADO`. Si hay timeout/error, permanece `CANCELANDO` y reintenta en la ronda siguiente con la **misma** referencia.
+
+La confirmación local a `PENDIENTE` se rechaza cuando ya se ha iniciado compensación; `CANCELADO` no permite reintentar la misma Idempotency-Key. No hay llamadas HTTP dentro de una transacción de Pedidos. **No activar el programador ni conmutar React hasta E2E real en MySQL**, fallos inducidos de red y revisión de concurrencia. Esta politica libera stock de intentos abandonados, sin garantizar recuperación comercial del pedido: el cliente debe generar otro intento tras su cancelación.

@@ -46,6 +46,9 @@ Checklist final: comprobar el mismo commit de GitHub en ZIP, eliminar target/nod
 | Productos | Catálogo integrado + reservas internas CI | MySQL, prueba de red, separación definitiva de la ruta legada |
 | Pedidos | Nuevo proceso independiente PR #21 integrado + CI H2 | Reconciliación/compensación, cambio de ruta React, MySQL y E2E |
 | Boleta | Cuarto servicio integrado PR #23, 6/6 MockMvc/H2 | MySQL, HTTP entre procesos y React; no es boleta tributaria |
-| Detalle Boleta | Quinto servicio creado: JWT, consulta a Boleta/Pedidos y cálculo desde snapshots (CI pendiente) | MySQL, HTTP real, E2E y verificación final |
+| Detalle Boleta | Quinto servicio integrado PR #25; 9/9 H2/MockMvc PASS en CI | MySQL, HTTP real, E2E y verificación final |
 
 Se mantiene abierta la issue #19 y la PR #8 draft hacia main; no confundir avance del código con entrega comprobada.
+
+
+**Seguimiento de consistencia distribuida:** el corte de compensación opt-in de Pedidos evita confirmaciones tardías tras expirar una intención y usa DELETE idempotente con tombstone en Productos. El programador no se activa hasta completar MySQL y E2E con fallos de red reales. No cambiar proxy de React ni `main` por un PASS en H2.

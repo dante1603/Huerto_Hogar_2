@@ -34,6 +34,12 @@ public class PedidoOrquestador {
         }
         if(intento.estado()==EstadoPedido.PENDIENTE)
             return new Resultado(persistencia.confirmado(intento.id()),false);
+        if(intento.estado()==EstadoPedido.CANCELANDO)
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                "Intento en compensacion; no crear una nueva reserva con esta clave");
+        if(intento.estado()==EstadoPedido.CANCELADO)
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "Intento expirado y cancelado; use otra Idempotency-Key");
         ReservaRemota snapshot;
         try{snapshot=productos.reservar(intento.referencia(),items);}
         catch(ReservaIndeterminadaException timeout) {

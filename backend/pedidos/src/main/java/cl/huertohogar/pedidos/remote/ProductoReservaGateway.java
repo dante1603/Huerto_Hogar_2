@@ -5,4 +5,5 @@ import java.util.List;
 public interface ProductoReservaGateway {
     ReservaRemota reservar(String referencia,List<CrearPedidoRequest.Item> productos);
     ReservaRemota consultar(String referencia);
+    void cancelar(String referencia);
 }
