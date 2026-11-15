@@ -231,7 +231,10 @@ def prueba_fallos(proxy):
     clave_abandonada = str(uuid.uuid4())
     cuerpo_abandonado = payload(mineral, 1)
     code, _ = crear(clave_abandonada, cuerpo_abandonado)
-    check(code == 503, "La reserva ambigua no devolvio 503")
+    check(code == 503, "Reserva ambigua: cliente HTTP " + str(code)
+          + ", PUT upstream " + str(proxy.statuses("PUT"))
+          + ", GET gateway " + str(proxy.count("GET"))
+          + ", GET upstream " + str(proxy.statuses("GET")))
     t_abandonada = time.monotonic()
     check(len(expect(8082, "GET", "/api/v1/pedidos/mios", 200, token=token)) == 1,
           "Pedido INICIADO se expuso como confirmado")
