@@ -17,6 +17,7 @@ DROP_AFTER = "drop-after-upstream"
 DROP_BEFORE = "drop-before-upstream"
 # El cliente no puede elegir el destino ni pasar una URL absoluta.
 ROUTE = re.compile(r"/api/v1/interno/reservas/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")
+MAX_BODY = 128 * 1024
 
 
 class FaultProxy:
@@ -46,7 +47,7 @@ class FaultProxy:
 
             def read_payload(self):
                 # HttpURLConnection/Spring Boot puede enviar Transfer-Encoding: chunked,
-                # no Content-Length. urllib vuelve a enviar el cuerpo normalizado.
+                # no Content-Length. Se vuelve a enviar el cuerpo normalizado.
                 encoding = self.headers.get("Transfer-Encoding", "").lower()
                 if "chunked" in encoding:
                     data = bytearray()
@@ -55,7 +56,7 @@ class FaultProxy:
                         if not line:
                             raise ConnectionError("Chunk HTTP cortado")
                         length = int(line.split(b";", 1)[0].strip(), 16)
-                        if length < 0 or length > 1024 * 1024 or len(data) + length > 1024 * 1024:
+                        if length < 0 or len(data) + length > MAX_BODY:
                             raise ValueError("Cuerpo HTTP de prueba excede el limite")
                         if length == 0:
                             while True:
@@ -68,6 +69,8 @@ class FaultProxy:
                             raise ConnectionError("Chunk HTTP incompleto")
                         data.extend(piece)
                 length = int(self.headers.get("Content-Length", "0"))
+                if length < 0 or length > MAX_BODY:
+                    raise ValueError("Cuerpo HTTP de prueba excede el limite")
                 return self.rfile.read(length) if length else None
 
             def forward(self, method):
@@ -80,17 +83,23 @@ class FaultProxy:
                               if owner._planned[method] else None)
                     if action:
                         owner._faults[(method, action)] += 1
-                body = self.read_payload()
+                try:
+                    self.connection.settimeout(10)
+                    body = self.read_payload()
+                except (ValueError, OSError, ConnectionError):
+                    self.send_error(413, "Cuerpo de prueba invalido")
+                    return
                 if action == DROP_BEFORE:
                     self.disconnect()
                     return
-                headers = {}
-                if self.headers.get("Authorization"):
-                    headers["Authorization"] = self.headers["Authorization"]
-                if self.headers.get("Content-Type"):
-                    headers["Content-Type"] = self.headers["Content-Type"]
-                if self.headers.get("Accept"):
-                    headers["Accept"] = self.headers["Accept"]
+                # No reenviar headers arbitrarios recibidos del cliente.
+                # Solo token hacia un upstream fijo en loopback.
+                headers = {"Accept": "application/json"}
+                token = self.headers.get("Authorization")
+                if token and token.startswith("Bearer "):
+                    headers["Authorization"] = token
+                if method == "PUT":
+                    headers["Content-Type"] = "application/json"
                 # Upstream fijo por socket en loopback, sin redirect HTTP automático.
                 connection = HTTPConnection("127.0.0.1", owner.upstream_port, timeout=10)
                 try:
@@ -98,7 +107,7 @@ class FaultProxy:
                     response = connection.getresponse()
                     status = response.status
                     response_body = response.read()
-                    mime = response.getheader("Content-Type", "application/json")
+                    # Solo serializamos JSON propio del contrato interno.
                 except (OSError, HTTPException):
                     self.disconnect()
                     return
@@ -110,7 +119,7 @@ class FaultProxy:
                     self.disconnect()
                     return
                 self.send_response(status)
-                self.send_header("Content-Type", mime)
+                self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(response_body)))
                 self.end_headers()
                 if response_body:
