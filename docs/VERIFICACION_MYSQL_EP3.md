@@ -11,6 +11,8 @@
 2. **Aislamiento de Datos y Fixtures Dinámicos:** Eliminación del consumo de productos compartidos (`BRU-TUB-001`, `ARI-FRU-002`). Generación de SKUs dinámicos (`GATE3-A-{run_id}`, `GATE3-B-{run_id}`) y contraseñas dinámicas por corrida (`secrets.token_urlsafe(16)`), verificando que el stock de catálogo persistente no sea modificado.
 3. **Consultas SQL Relacionales Exactas:** Eliminación de `ORDER BY creada_en DESC LIMIT 1` y búsquedas de subcadenas aproximadas; filtrado estricto por IDs exactos y llaves foráneas (`referencia_reserva`, `pedido_id`, `id_boleta`, `cliente_id`), validando cardinalidades e importes exactos.
 4. **Seguridad y Documentación:** Ejecución de queries SQL conectando como `huerto_app` (no `root`); omisión de `token_hash` en logs; corrección de enlaces Markdown en documentación a rutas relativas del repositorio; aclaración de aprovisionamiento exclusivo de `ADMINISTRADOR` (sin rol `VENDEDOR`).
+5. **Rotación de Credencial Administrativa y Fixture Efímero (Commit de seguimiento):** Rotación inmediata y deshabilitación permanente de la cuenta histórica `admin.gate3@huertohogar.cl` en la base de datos local (invalidando el hash BCrypt expuesto). Aprovisionamiento de un administrador efímero por corrida (`admin.gate3.{run_id}@huertohogar.test`) con contraseña aleatoria generada únicamente en memoria (`secrets.token_urlsafe(24)`), eliminando cualquier contraseña o hash literal en Git.
+6. **Protección de Argumentos de Proceso en Docker:** `mysql_exec` transfiere `DB_PASSWORD` mediante variable de entorno del proceso (`env["MYSQL_PWD"]`) e invoca `docker compose exec -T -e MYSQL_PWD mysql ...` sin colocar el valor en la lista de argumentos de comando (`argv`), previniendo su visibilidad ante inspectores de procesos del sistema operativo.
 
 ---
 
@@ -49,15 +51,19 @@ huertohogar_usuarios
 
 ## 2. Aprovisionamiento Controlado y Aislamiento de Datos de Prueba
 
-1. **Aprovisionamiento de ADMINISTRADOR en BD local:**
-   - Para cumplir estrictamente la regla de que el registro público solo emite rol `CLIENTE` y que ningún rol privilegiado puede registrarse por HTTP público, se aprovisionó una cuenta de prueba `admin.gate3@huertohogar.cl` directamente en la base de datos local `huertohogar_usuarios.usuario` con rol `ADMINISTRADOR` y contraseña hasheada con `BCryptPasswordEncoder`. (Nota: solo se aprovisionó el rol `ADMINISTRADOR` necesario para el alta de productos de prueba; el rol `VENDEDOR` no fue requerido en Gate 3).
+1. **Rotación de Cuenta Previa y Aprovisionamiento de ADMINISTRADOR Efímero en BD local:**
+   - La cuenta de prueba previa `admin.gate3@huertohogar.cl` fue rotada y deshabilitada en la base de datos local (estableciendo un hash inválido que no coincide con ninguna clave), invalidando permanentemente la credencial expuesta en el historial.
+   - En cada ejecución del runner se genera una credencial administrativa fuerte y dinámica en memoria (`secrets.token_urlsafe(24)` + sufijo de complejidad).
+   - Se registra inicialmente la cuenta efímera mediante el endpoint público `POST /api/v1/usuarios`, donde Spring Security calcula de forma natural el hash BCrypt con su `PasswordEncoder` sin necesidad de hashes estáticos en el repositorio.
+   - La elevación a rol `ADMINISTRADOR` se realiza estrictamente mediante operación directa sobre la base de datos local `huertohogar_usuarios.usuario` (procedimiento de laboratorio, nunca expuesto por endpoint público).
+   - Al finalizar la ejecución, la credencial efímera es desactivada y su rol revocado.
    - Credencial administrativa autenticada mediante `POST /api/v1/auth/login` obteniendo un Bearer JWT con claim `"rol": "ADMINISTRADOR"`.
 
 2. **Aislamiento de Fixtures de Prueba con SKU y Claves Dinámicas:**
    - Conforme a la auditoría de PR #30, el runner no consume stock de productos compartidos o persistentes (`BRU-TUB-001`, `ARI-FRU-002`).
    - Por cada ejecución se generan fixtures aislados con identificador dinámico de corrida (`run_id` aleatorio):
-     - Producto A: SKU `GATE3-A-{run_id}`, `Producto Test A ({run_id})`, precio $120, stock 10, origen `Bruma`.
-     - Producto B: SKU `GATE3-B-{run_id}`, `Producto Test B ({run_id})`, precio $250, stock 10, origen `Árido`.
+     - Producto A: SKU `GATE3-A-{run_id}`, `Producto Test A ({run_id})`, precio $120, stock 15, origen `Bruma`.
+     - Producto B: SKU `GATE3-B-{run_id}`, `Producto Test B ({run_id})`, precio $250, stock 20, origen `Árido`.
    - Contraseñas dinámicas y seguras generadas por ejecución vía `secrets.token_urlsafe(16)`.
    - Se valida explícitamente que los productos de catálogo compartidos conserven su stock intacto antes y después de la prueba.
 
@@ -125,7 +131,7 @@ El script automatizado `scripts/verify_mysql_gate3.py` ejecutó el flujo transac
 
 ## 5. Verificación Directa en los Cinco Esquemas MySQL
 
-Las consultas SQL directas son ejecutadas conectándose exclusivamente con el usuario de aplicación `huerto_app` (no `root`) mediante `docker compose exec -T -e MYSQL_PWD=... mysql mysql -uhuerto_app -s -N`.
+Las consultas SQL directas son ejecutadas conectándose exclusivamente con el usuario de aplicación `huerto_app` (no `root`) mediante `docker compose exec -T -e MYSQL_PWD mysql mysql -uhuerto_app -s -N`, pasando `MYSQL_PWD` como variable de entorno del proceso y nunca como argumento de línea de comandos visible en `argv`.
 
 En cumplimiento de las observaciones de auditoría, las consultas filtran estrictamente por identificadores exactos y llaves foráneas (`referencia_reserva`, `pedido_id`, `id_boleta`, `cliente_id`), sin recurrir a `ORDER BY creada_en DESC LIMIT 1` ni aserciones de subcadenas aproximadas:
 
@@ -239,7 +245,12 @@ Salida final del runner:
 
 - **Gate 1:** Creación y acceso a los cinco esquemas MySQL -> **APROBADO (PASS)**.
 - **Gate 2:** Conexión JPA/Hibernate de los cinco servicios sobre MySQL real -> **APROBADO (PASS)**.
-- **Gate 3:** Transaccionalidad real, reserva de inventario, emisión de comprobantes, persistencia post-reinicio y rotación de refresh tokens sobre MySQL 8.4 -> **APROBADO (PASS)**.
+- **Gate 3:** Transaccionalidad real, reserva de inventario, emisión de comprobantes, persistencia post-reinicio y rotación de refresh tokens sobre MySQL 8.4 -> **APROBADO (PASS AUDITADO)**.
+- **Trazabilidad y Distinción de Entornos:**
+  - Las auditorías de la PR #30 corresponden a revisiones estáticas de código y contratos.
+  - La evidencia y el estado **PASS** de MySQL corresponden estrictamente a la ejecución local automatizada en Antigravity con motor Docker `mysql:8.4.13` real.
+  - GitHub Actions en CI continúa ejecutando la suite rápida hermética sobre H2; no sustituye la verificación transaccional de MySQL.
+  - Los datos generados corresponden a una base local de pruebas; los fixtures son dinámicos e independientes por corrida (`run_id`), el inventario compartido permanece intacto y las credenciales efímeras se desactivan al finalizar.
 - **Límites vigentes:**
   - El frontend React aún consume el controlador de Pedidos heredado del Catálogo; la conmutación al servicio independiente de Pedidos y E2E de navegador se abordará en la siguiente fase de frontend.
   - El reconciliador automático de pedidos (`RECONCILIACION_HABILITADA`) permanece inactivo (`false`) por diseño hasta pruebas específicas de desconexión.

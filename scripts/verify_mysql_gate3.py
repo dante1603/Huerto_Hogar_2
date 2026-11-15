@@ -60,10 +60,12 @@ def check(cond, desc):
 
 
 def mysql_exec(sql):
-    """Ejecuta SQL conectando exclusivamente como usuario huerto_app (no root) sin exponer contrasenas."""
+    """Ejecuta SQL conectando exclusivamente como usuario huerto_app (no root) sin exponer contraseñas en argv."""
     db_pass = ENV_MAP.get("DB_PASSWORD", "")
+    env = os.environ.copy()
+    env["MYSQL_PWD"] = db_pass
     cmd = [
-        "docker", "compose", "exec", "-T", "-e", f"MYSQL_PWD={db_pass}",
+        "docker", "compose", "exec", "-T", "-e", "MYSQL_PWD",
         "mysql", "mysql", "-uhuerto_app", "-s", "-N"
     ]
     proc = subprocess.run(
@@ -71,7 +73,8 @@ def mysql_exec(sql):
         input=sql,
         text=True,
         capture_output=True,
-        cwd=str(ROOT)
+        cwd=str(ROOT),
+        env=env
     )
     if proc.returncode != 0:
         raise RuntimeError(f"Error MySQL (huerto_app): {proc.stderr.strip()}")
@@ -285,20 +288,41 @@ class ProcessManager:
         self.start_all()
 
 
-def ensure_admin_exists():
-    """Aprovisiona usuario administrador local controlado en MySQL si no existe (nunca por registro publico)."""
-    sql_check = "SELECT id_usuario FROM huertohogar_usuarios.usuario WHERE email_usuario = 'admin.gate3@huertohogar.cl';"
-    out = mysql_exec(sql_check)
-    if not out.strip():
-        # Insertar con hash BCrypt de AdminGate3!2026
-        sql_insert = (
-            "INSERT INTO huertohogar_usuarios.usuario "
-            "(nombre_usuario, rut_usuario, direccion_usuario, email_usuario, contrasena_usuario, rol_usuario, fecha_hora_creacion_usuario) "
-            "VALUES ('Admin E2E Gate3', '99999999-9', 'Base Operativa Local', 'admin.gate3@huertohogar.cl', "
-            "'$2a$10$eLSsFotoJiuetVZ4C28HyeprXyV1CBGObSUhlHMUBhkSVdiPd0Lk6', 'ADMINISTRADOR', NOW());"
-        )
-        mysql_exec(sql_insert)
-        print("[+] Usuario ADMINISTRADOR local aprovisionado de forma controlada en BD", flush=True)
+def rotate_compromised_admin():
+    """Invalida y deshabilita permanentemente la cuenta de prueba antigua expuesta en git."""
+    sql = (
+        "UPDATE huertohogar_usuarios.usuario "
+        "SET contrasena_usuario = '$2a$10$ROTATED_DISABLED_ACCOUNT_EXPIRED', rol_usuario = 'CLIENTE' "
+        "WHERE email_usuario = 'admin.gate3@huertohogar.cl';"
+    )
+    mysql_exec(sql)
+
+
+def provision_ephemeral_admin(run_id):
+    """
+    Aprovisiona un administrador de laboratorio efímero para este run_id con credencial
+    aleatoria en memoria, sin contraseñas literales ni hashes fijos en el repositorio.
+    """
+    admin_email = f"admin.gate3.{run_id}@huertohogar.test"
+    admin_pass = secrets.token_urlsafe(24) + "A1!"
+    admin_rut = rut_valido(10000000 + secrets.randbelow(5000000))
+
+    # Registro vía endpoint público (Spring Security calcula el hash BCrypt dinámicamente con su PasswordEncoder)
+    admin_reg = expect(8081, "POST", "/api/v1/usuarios", 201, payload={
+        "nombreUsuario": f"Admin Lab {run_id}",
+        "rutUsuario": admin_rut,
+        "direccionUsuario": "Laboratorio Controlado Gate 3",
+        "emailUsuario": admin_email,
+        "contrasena": admin_pass,
+    })
+    check(admin_reg["rolUsuario"] == "CLIENTE", "Admin efímero registrado inicialmente como CLIENTE")
+
+    # Elevación de rol controlada en BD local (procedimiento de laboratorio, nunca por endpoint público)
+    sql_elevate = f"UPDATE huertohogar_usuarios.usuario SET rol_usuario = 'ADMINISTRADOR' WHERE email_usuario = '{admin_email}';"
+    mysql_exec(sql_elevate)
+    print("[+] Administrador efímero aprovisionado de forma controlada en BD con credencial dinámica en memoria", flush=True)
+
+    return admin_email, admin_pass
 
 
 def run_full_gate3():
@@ -309,6 +333,7 @@ def run_full_gate3():
 
     pm = ProcessManager()
     run_id = uuid.uuid4().hex[:8]
+    admin_email = None
 
     try:
         # Arranque seguro de servicios
@@ -326,12 +351,13 @@ def run_full_gate3():
 
         # 2. Aprovisionamiento de Administrador y Creacion de Fixtures Aisladas
         print("\n--- PASO 2: Aislamiento de fixtures y productos de prueba ---", flush=True)
-        ensure_admin_exists()
+        rotate_compromised_admin()
+        admin_email, admin_pass = provision_ephemeral_admin(run_id)
 
         # Login de admin para obtener JWT con rol ADMINISTRADOR
         admin_login = expect(8081, "POST", "/api/v1/auth/login", 200, payload={
-            "email": "admin.gate3@huertohogar.cl",
-            "contrasena": "AdminGate3!2026"
+            "email": admin_email,
+            "contrasena": admin_pass
         })
         admin_jwt = admin_login["accessToken"]
         check(admin_login["rolUsuario"] == "ADMINISTRADOR", "JWT administrativo obtenido")
@@ -691,6 +717,16 @@ def run_full_gate3():
         print("======================================================================", flush=True)
 
     finally:
+        # Desactivar credencial del administrador efímero al concluir
+        if admin_email:
+            try:
+                mysql_exec(
+                    f"UPDATE huertohogar_usuarios.usuario "
+                    f"SET contrasena_usuario = '$2a$10$EPHEMERAL_DEACTIVATED', rol_usuario = 'CLIENTE' "
+                    f"WHERE email_usuario = '{admin_email}';"
+                )
+            except Exception:
+                pass
         # Limpieza estricta de procesos propios al finalizar
         pm.stop_managed()
 

@@ -95,7 +95,7 @@ El contenedor ejecuta los scripts de docker-entrypoint-initdb.d **solo en la pri
 La UI permite crear CLIENTE, pero aún no existe un endpoint público de provisión de usuarios privilegiados (y no debe existir sin una autorización robusta).
 
 Procedimiento controlado de laboratorio ejecutado y validado en Gate 3 (ver docs/VERIFICACION_MYSQL_EP3.md):
-1. Aprovisionamiento controlado de una cuenta de prueba `ADMINISTRADOR` directamente en la base de datos local `huertohogar_usuarios.usuario` con hash BCrypt, garantizando que el registro público continúe restringido exclusivamente a `CLIENTE`.
+1. Aprovisionamiento controlado de una cuenta de prueba `ADMINISTRADOR` efímera con credencial dinámica generada en memoria (sin hashes ni contraseñas estáticas en git), inscrita con rol base `CLIENTE` y posterior elevación en la base de datos local `huertohogar_usuarios.usuario`, rotando y deshabilitando cualquier cuenta previa y garantizando que el registro público continúe restringido exclusivamente a `CLIENTE`.
 2. Iniciar sesión mediante `POST /api/v1/auth/login` para emitir el JWT con claim `"rol": "ADMINISTRADOR"`.
 3. Crear productos de prueba aislados mediante la API REST de Catálogo (`POST /api/v1/productos`) usando dicho JWT.
 4. El rol `VENDEDOR` permanece reservado para futuras fases donde se incorporen transiciones operativas de despacho de pedidos.
