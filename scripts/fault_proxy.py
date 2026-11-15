@@ -6,15 +6,17 @@ DROP_BEFORE: cierra la conexión sin entregar la petición al upstream.
 Todos los fallos solo se aplican a la siguiente operación del método indicado.
 """
 from collections import Counter, defaultdict, deque
+from http.client import HTTPConnection, HTTPException
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import re
 import socket
 import threading
-import urllib.error
-import urllib.request
 
 
 DROP_AFTER = "drop-after-upstream"
 DROP_BEFORE = "drop-before-upstream"
+# El cliente no puede elegir el destino ni pasar una URL absoluta.
+ROUTE = re.compile(r"/api/v1/interno/reservas/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")
 
 
 class FaultProxy:
@@ -69,6 +71,9 @@ class FaultProxy:
                 return self.rfile.read(length) if length else None
 
             def forward(self, method):
+                if ROUTE.fullmatch(self.path) is None:
+                    self.send_error(400, "Ruta interna no autorizada")
+                    return
                 with owner._lock:
                     owner._seen[method] += 1
                     action = (owner._planned[method].popleft()
@@ -79,7 +84,6 @@ class FaultProxy:
                 if action == DROP_BEFORE:
                     self.disconnect()
                     return
-                url = "http://127.0.0.1:" + str(owner.upstream_port) + self.path
                 headers = {}
                 if self.headers.get("Authorization"):
                     headers["Authorization"] = self.headers["Authorization"]
@@ -87,20 +91,19 @@ class FaultProxy:
                     headers["Content-Type"] = self.headers["Content-Type"]
                 if self.headers.get("Accept"):
                     headers["Accept"] = self.headers["Accept"]
-                request = urllib.request.Request(
-                    url, method=method, data=body, headers=headers)
+                # Upstream fijo por socket en loopback, sin redirect HTTP automático.
+                connection = HTTPConnection("127.0.0.1", owner.upstream_port, timeout=10)
                 try:
-                    with urllib.request.urlopen(request, timeout=10) as response:
-                        status = response.status
-                        response_body = response.read()
-                        mime = response.headers.get("Content-Type", "application/json")
-                except urllib.error.HTTPError as error:
-                    status = error.code
-                    response_body = error.read()
-                    mime = error.headers.get("Content-Type", "application/json")
-                except (OSError, urllib.error.URLError):
+                    connection.request(method, self.path, body=body, headers=headers)
+                    response = connection.getresponse()
+                    status = response.status
+                    response_body = response.read()
+                    mime = response.getheader("Content-Type", "application/json")
+                except (OSError, HTTPException):
                     self.disconnect()
                     return
+                finally:
+                    connection.close()
                 with owner._lock:
                     owner._upstream_status[(method, status)] += 1
                 if action == DROP_AFTER:
