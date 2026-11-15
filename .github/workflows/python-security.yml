@@ -28,4 +28,6 @@ jobs:
       - name: Compile security-sensitive scripts
         run: python -m py_compile scripts/manage_local_services.py scripts/verify_react_mysql_ep3.py
       - name: Run isolated security regression tests (no MySQL required)
+        env:
+          HH_DEBUG_PROCESS_SNAPSHOT: '1'
         run: python -m unittest discover -s scripts -p 'test_*.py' -v
