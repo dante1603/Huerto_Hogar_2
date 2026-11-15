@@ -7,6 +7,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import jakarta.servlet.DispatcherType;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -58,6 +59,8 @@ public class PedidosSecurityConfig {
         return http.csrf(AbstractHttpConfigurer::disable).cors(Customizer.withDefaults())
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Conserva el codigo original de error en el dispatch interno /error.
+                .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers(HttpMethod.GET,"/swagger-ui.html","/swagger-ui/**",
                     "/v3/api-docs","/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.POST,"/api/v1/pedidos").hasRole("CLIENTE")
