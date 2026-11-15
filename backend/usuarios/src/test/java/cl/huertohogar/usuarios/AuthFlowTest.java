@@ -3,6 +3,7 @@ package cl.huertohogar.usuarios;
 import cl.huertohogar.usuarios.models.entities.RolUsuario;
 import cl.huertohogar.usuarios.models.entities.Usuario;
 import cl.huertohogar.usuarios.repositories.UsuarioRepository;
+import cl.huertohogar.usuarios.repositories.RefreshSesionRepository;
 import com.jayway.jsonpath.JsonPath;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,12 +32,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuthFlowTest {
     @Autowired MockMvc mvc;
     @Autowired UsuarioRepository repository;
+    @Autowired RefreshSesionRepository sesiones;
     @Autowired PasswordEncoder encoder;
 
     private Long id;
 
     @BeforeEach
     void preparar() {
+        sesiones.deleteAll();
         repository.deleteAll();
         Usuario usuario = new Usuario();
         usuario.setNombreUsuario("Cliente de prueba");
@@ -99,4 +102,80 @@ class AuthFlowTest {
             .andExpect(status().isOk())
             .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
     }
+    private String loginCompleto() throws Exception {
+        return mvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"cliente@example.com\",\"contrasena\":\"ClaveSegura123!\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+            .andExpect(jsonPath("$.refreshExpiresInSeconds").value(86400))
+            .andReturn().getResponse().getContentAsString();
+    }
+
+    @Test
+    void refreshRotaElSecretoYElAnteriorEsInvalido() throws Exception {
+        String initial = loginCompleto();
+        String first = JsonPath.read(initial, "$.refreshToken");
+        org.junit.jupiter.api.Assertions.assertEquals(1, sesiones.count());
+        org.junit.jupiter.api.Assertions.assertNotEquals(first, sesiones.findAll().get(0).getTokenHash());
+
+        String rotated = mvc.perform(post("/api/v1/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"refreshToken\":\"" + first + "\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.rolUsuario").value("CLIENTE"))
+            .andExpect(jsonPath("$.expiresInSeconds").value(1800))
+            .andReturn().getResponse().getContentAsString();
+        String second = JsonPath.read(rotated, "$.refreshToken");
+
+        org.junit.jupiter.api.Assertions.assertNotEquals(first, second);
+        org.junit.jupiter.api.Assertions.assertEquals(1, sesiones.count());
+        mvc.perform(post("/api/v1/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"refreshToken\":\"" + first + "\"}"))
+            .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/v1/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"refreshToken\":\"" + second + "\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void revocaRefreshYNoPermiteNuevoAcceso() throws Exception {
+        String initial = loginCompleto();
+        String refresh = JsonPath.read(initial, "$.refreshToken");
+        String payload = "{\"refreshToken\":\"" + refresh + "\"}";
+        mvc.perform(post("/api/v1/auth/logout")
+                .contentType(MediaType.APPLICATION_JSON).content(payload))
+            .andExpect(status().isNoContent());
+        org.junit.jupiter.api.Assertions.assertEquals(0, sesiones.count());
+        mvc.perform(post("/api/v1/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON).content(payload))
+            .andExpect(status().isUnauthorized());
+        // Logout es idempotente: no revela si el token ya se había revocado.
+        mvc.perform(post("/api/v1/auth/logout")
+                .contentType(MediaType.APPLICATION_JSON).content(payload))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void refreshRecuperaRolActualDelUsuarioYRechazaFormatoIncorrecto() throws Exception {
+        String initial = loginCompleto();
+        String refresh = JsonPath.read(initial, "$.refreshToken");
+        Usuario usuario = repository.findById(id).orElseThrow();
+        usuario.setRolUsuario(RolUsuario.VENDEDOR);
+        repository.saveAndFlush(usuario);
+
+        mvc.perform(post("/api/v1/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"refreshToken\":\"" + refresh + "\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.rolUsuario").value("VENDEDOR"));
+
+        mvc.perform(post("/api/v1/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"refreshToken\":\"incorrecto\"}"))
+            .andExpect(status().isBadRequest());
+    }
+
 }

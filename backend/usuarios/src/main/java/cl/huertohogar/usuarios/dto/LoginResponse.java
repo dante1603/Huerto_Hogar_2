@@ -5,5 +5,7 @@ public record LoginResponse(
     String tokenType,
     long expiresInSeconds,
     Long idUsuario,
-    String rolUsuario
+    String rolUsuario,
+    String refreshToken,
+    long refreshExpiresInSeconds
 ) {}
