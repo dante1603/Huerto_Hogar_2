@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Prueba E2E de cinco procesos Spring reales con H2 efimera y HTTP REST."""
 import base64
+from concurrent.futures import ThreadPoolExecutor
+import threading
+from fault_proxy import FaultProxy, DROP_AFTER, DROP_BEFORE
 import json
 import os
 import secrets
@@ -179,6 +182,134 @@ def prueba():
           " boleta / detalle / idempotencia")
 
 
+
+def prueba_fallos(proxy):
+    print("[FAULT] Preparando segundo cliente para red degradada y carreras",
+          flush=True)
+    comprador, token = cliente(3, secrets.token_urlsafe(20), uuid.uuid4().hex[:10])
+    productos = {p["sku"]: p for p in expect(8080, "GET", "/api/v1/productos", 200)}
+    mineral = productos["YER-SEM-003"]
+    fruta = productos["ARI-FRU-002"]
+    stock_mineral = mineral["stock"]
+    stock_fruta = fruta["stock"]
+
+    def payload(producto, cantidad):
+        return {"planetaDestino": "Yermo",
+                "productos": [{"productoId": producto["id"], "cantidad": cantidad}]}
+
+    def crear(clave, data, timeout=15):
+        return http(8082, "POST", "/api/v1/pedidos", token=token,
+                    key=clave, payload=data, timeout=timeout)
+
+    # El PUT fue aplicado remotamente pero su respuesta nunca llega a Pedidos.
+    # Pedidos debe recuperar con GET usando el mismo UUID, sin doble descuento.
+    print("[FAULT] PUT confirmado sin respuesta; GET debe recuperar snapshot",
+          flush=True)
+    antes_get = proxy.count("GET")
+    proxy.inject("PUT", DROP_AFTER)
+    clave_recuperada = str(uuid.uuid4())
+    code, pedido = crear(clave_recuperada, payload(mineral, 1))
+    check(code == 201 and pedido["estado"] == "PENDIENTE",
+          "Timeout PUT aplicado no fue reconciliado")
+    check(proxy.count("GET") > antes_get, "No consulto la misma reserva tras PUT perdido")
+    code, misma = crear(clave_recuperada, payload(mineral, 1))
+    check(code == 200 and misma["id"] == pedido["id"],
+          "Reintento tras PUT perdido no fue idempotente")
+    actual = {p["id"]: p["stock"] for p in expect(8080, "GET", "/api/v1/productos", 200)}
+    check(actual[mineral["id"]] == stock_mineral - 1,
+          "PUT perdido provocó dos descuentos")
+
+    # Dos pérdidas seguidas: no se puede afirmar pedido ni deshacer stock a ciegas.
+    print("[FAULT] PUT confirmado sin respuesta y GET perdido; queda INICIADO",
+          flush=True)
+    proxy.inject("PUT", DROP_AFTER)
+    proxy.inject("GET", DROP_BEFORE)
+    clave_abandonada = str(uuid.uuid4())
+    cuerpo_abandonado = payload(mineral, 1)
+    code, _ = crear(clave_abandonada, cuerpo_abandonado)
+    check(code == 503, "La reserva ambigua no devolvio 503")
+    t_abandonada = time.monotonic()
+    check(len(expect(8082, "GET", "/api/v1/pedidos/mios", 200, token=token)) == 1,
+          "Pedido INICIADO se expuso como confirmado")
+    actual = {p["id"]: p["stock"] for p in expect(8080, "GET", "/api/v1/productos", 200)}
+    check(actual[mineral["id"]] == stock_mineral - 2,
+          "PUT ambiguo no persistio en Productos")
+    if os.environ.get("E2E_RECONCILIACION") == "1":
+        # Una respuesta DELETE se pierde despues de restituir el stock.
+        # El siguiente intervalo debe repetir el DELETE sobre su tombstone.
+        proxy.inject("DELETE", DROP_AFTER)
+
+    print("[RACE] Seis POST simultaneos con la misma Idempotency-Key",
+          flush=True)
+    clave_unica = str(uuid.uuid4())
+    gate = threading.Barrier(6)
+    def misma_clave():
+        gate.wait(timeout=10)
+        return crear(clave_unica, payload(mineral, 1))
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        resultados = [f.result(timeout=30) for f in
+                      [pool.submit(misma_clave) for _ in range(6)]]
+    codigos = sorted(code for code, _ in resultados)
+    check(codigos == [200] * 5 + [201],
+          "Carrera de una clave: estados " + str(codigos))
+    ids = {body["id"] for _, body in resultados}
+    check(len(ids) == 1, "Una misma clave creo varios pedidos")
+
+    print("[RACE] Cuatro pedidos diferentes compiten por siete unidades",
+          flush=True)
+    gate = threading.Barrier(4)
+    def distinta_clave():
+        gate.wait(timeout=10)
+        return crear(str(uuid.uuid4()), payload(fruta, 3))
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        resultados = [f.result(timeout=30) for f in
+                      [pool.submit(distinta_clave) for _ in range(4)]]
+    codigos = sorted(code for code, _ in resultados)
+    check(codigos == [201, 201, 409, 409],
+          "Sobreventa o reserva perdida: estados " + str(codigos))
+    ids = [body["id"] for code, body in resultados if code == 201]
+    check(len(set(ids)) == 2, "Distintas claves convergieron en el mismo pedido")
+    actual = {p["id"]: p["stock"] for p in expect(8080, "GET", "/api/v1/productos", 200)}
+    check(actual[fruta["id"]] == stock_fruta - 6 and actual[fruta["id"]] >= 0,
+          "Inventario bajo carrera de stock incompatible")
+    check(actual[mineral["id"]] == stock_mineral - 3,
+          "Carrera de Idempotency-Key duplico stock o libero la intencion ambigua")
+
+    if os.environ.get("E2E_RECONCILIACION") == "1":
+        # TTL de 60 s para el ensayo exclusivamente. El worker opt-in
+        # nunca se activa en el perfil operativo normal.
+        print("[FAULT] Verificando DELETE perdido y tombstone al expirar",
+              flush=True)
+        restante = t_abandonada + 65 - time.monotonic()
+        if restante > 0:
+            time.sleep(restante)
+        limite = time.monotonic() + 20
+        while True:
+            code, _ = crear(clave_abandonada, cuerpo_abandonado)
+            if code == 409:
+                break
+            check(code == 503, "Pedido abandonado se confirmo durante compensacion: "
+                  + str(code))
+            check(time.monotonic() < limite, "Compensacion no finalizo tras DELETE perdido")
+            time.sleep(1)
+        check(proxy.count("DELETE") >= 2 and proxy.injected("DELETE", DROP_AFTER) == 1,
+              "No se reintento DELETE tras respuesta perdida")
+        actual = {p["id"]: p["stock"] for p in expect(8080, "GET", "/api/v1/productos", 200)}
+        check(actual[mineral["id"]] == stock_mineral - 2,
+              "Compensacion repuso stock cero o mas de una vez")
+        print("[PASS] Compensacion con tombstone y respuesta DELETE perdida",
+              flush=True)
+    else:
+        print("[SKIP] Compensacion temporizada exige E2E_RECONCILIACION=1")
+
+    check(proxy.injected("PUT", DROP_AFTER) == 2 and
+          proxy.injected("GET", DROP_BEFORE) == 1,
+          "Faltaron fallos PUT/GET previstos")
+    proxy.assert_empty()
+    print("[PASS] Respuestas perdidas + carreras de clave y stock entre procesos",
+          flush=True)
+
+
 def listo(port):
     try:
         code, docs = http(port, "GET", "/v3/api-docs", timeout=2)
@@ -189,10 +320,12 @@ def listo(port):
 
 def ejecutar():
     secreto = base64.b64encode(secrets.token_bytes(48)).decode("ascii")
-    for _, _, port in SERVICIOS:
+    for port in [s[2] for s in SERVICIOS] + [8090]:
         with socket.socket() as sock:
             check(sock.connect_ex(("127.0.0.1", port)) != 0,
                   "Puerto ocupado: " + str(port))
+    proxy = FaultProxy(port=8090, upstream_port=8080)
+    proxy.start()
     processes = []
     with tempfile.TemporaryDirectory(prefix="fullstack-rest-") as carpeta:
         registros = {}
@@ -207,7 +340,12 @@ def ejecutar():
                 env.update({
                     "JWT_SECRET_BASE64": secreto,
                     "JWT_ISSUER": "huertohogar-usuarios",
-                    "RECONCILIACION_HABILITADA": "false",
+                    "RECONCILIACION_HABILITADA": (
+                        "true" if os.environ.get("E2E_RECONCILIACION") == "1"
+                        else "false"),
+                    "RECONCILIACION_CADUCIDAD_MINUTOS": "1",
+                    "RECONCILIACION_INTERVALO_MS": "1000",
+                    "PRODUCTOS_BASE_URL": "http://127.0.0.1:8090",
                     "PORT": str(port), "SERVER_PORT": str(port),
                 })
                 with registro.open("wb") as salida:
@@ -226,6 +364,7 @@ def ejecutar():
                 else:
                     raise RuntimeError("No arranco servicio: " + nombre)
             prueba()
+            prueba_fallos(proxy)
         except Exception:
             print("[ERROR] Ultimas lineas de startup:", file=sys.stderr)
             for nombre, registro in registros.items():
@@ -244,6 +383,7 @@ def ejecutar():
                 except subprocess.TimeoutExpired:
                     proc.kill()
                     proc.wait(timeout=5)
+            proxy.stop()
 
 
 if __name__ == "__main__":

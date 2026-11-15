@@ -6,6 +6,7 @@ on:
       - "backend/**"
       - ".github/workflows/catalogo-ci.yml"
       - "scripts/e2e_http_fullstack.py"
+      - "scripts/fault_proxy.py"
   workflow_dispatch:
 
 concurrency:
@@ -52,4 +53,6 @@ jobs:
           done
       - name: Contrato HTTP cinco procesos separados (H2 demo)
         timeout-minutes: 8
+        env:
+          E2E_RECONCILIACION: '1'
         run: python3 scripts/e2e_http_fullstack.py
