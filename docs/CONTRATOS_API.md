@@ -60,22 +60,22 @@ Login entrega JWT HS256 (30 minutos) y refreshToken aleatorio de 256 bits (24 ho
 Nota: los refresh tokens son secretos y no deben mostrarse en logs, URLs ni capturas. La persistencia y transaccionalidad con MySQL 8.4 real están validadas en Gate 3 (PASS; ver docs/VERIFICACION_MYSQL_EP3.md); en CI automatizado se conserva H2 como suite rápida de regresión.
 
 
-## Contrato REST Productos / Pedidos (primer corte cinco microservicios)
+## Contrato REST Productos / Pedidos (cinco microservicios con React conectado)
 
-PUT/GET/DELETE /api/v1/interno/reservas/{referencia} requieren JWT SERVICIO_PEDIDOS. PUT acepta productos[{productoId,cantidad}]; crea reserva atómica (201), reintenta mismo UUID sin descontar (200), o devuelve 400/404/409. GET consulta snapshot y estado para reconciliar timeouts. DELETE compensa stock solo una vez y conserva tombstone de CANCELADA (204). Precio proviene del backend, no del navegador. Consulte docs/ARQUITECTURA_5_MICROSERVICIOS_EP3.md. El microservicio Pedidos independiente está validado junto a los otros 4 microservicios sobre HTTP real y MySQL 8.4 (Gate 3 PASS; ver docs/VERIFICACION_MYSQL_EP3.md). React aún usa Pedidos legado del Catálogo hasta la validación visual y conmutación de tráfico en la siguiente fase.
+PUT/GET/DELETE /api/v1/interno/reservas/{referencia} requieren JWT SERVICIO_PEDIDOS. PUT acepta productos[{productoId,cantidad}]; crea reserva atómica (201), reintenta mismo UUID sin descontar (200), o devuelve 400/404/409. GET consulta snapshot y estado para reconciliar timeouts. DELETE compensa stock solo una vez y conserva tombstone de CANCELADA (204). Precio proviene del backend, no del navegador. Consulte docs/ARQUITECTURA_5_MICROSERVICIOS_EP3.md. El microservicio Pedidos independiente está validado junto a los otros 4 microservicios sobre HTTP real y MySQL 8.4 (Gate 3 PASS; ver docs/VERIFICACION_MYSQL_EP3.md). A partir de PR feat/react-pedidos-independiente-2026-11-15, el frontend React conmutó su tráfico a Pedidos independiente (:8082), Boleta (:8083) y Detalle Boleta (:8084).
 
 
-## Contrato Boleta (cuarto servicio, integrado PR #23; E2E pendiente)
+## Contrato Boleta (cuarto servicio, integrado PR #23; React E2E validado)
 
 | Ruta | Metodo | Autorizacion | Resultado |
 |---|---|---|---|
 | `/api/v1/boletas` | POST | JWT CLIENTE | `{pedidoId}`; 201 nueva, 200 reintento, 409 pedido no confirmado, 503 sin snapshot valido |
 | `/api/v1/boletas/{id}` | GET | JWT propietario o VENDEDOR/ADMINISTRADOR | 200, 404 si otro cliente |
 
-Se obtiene snapshot de `backend/pedidos` mediante el JWT del cliente delegado. No se aceptan usuario/total/precio por JSON. El documento es academico, inmutable y NO tributario; no prueba pago. Pedidos independiente no recibe aun trafico desde React. Persistencia E2E en MySQL 8.4 validada (Gate 3 PASS; ver docs/VERIFICACION_MYSQL_EP3.md).
+Se obtiene snapshot de `backend/pedidos` mediante el JWT del cliente delegado. No se aceptan usuario/total/precio por JSON. El documento es academico, inmutable y NO tributario; no prueba pago. Pedidos independiente recibe trafico desde React a través de Vite proxy (:8082 y :8083). Persistencia E2E en MySQL 8.4 validada (Gate 3 PASS; ver docs/VERIFICACION_MYSQL_EP3.md y docs/VERIFICACION_REACT_MYSQL_EP3.md).
 
 
-## Contrato Detalle Boleta (quinto servicio; integración de código en evaluación)
+## Contrato Detalle Boleta (quinto servicio; React E2E validado)
 
 | Ruta | Método | Autorización | Resultado |
 |---|---|---|---|
@@ -83,7 +83,7 @@ Se obtiene snapshot de `backend/pedidos` mediante el JWT del cliente delegado. N
 | `/api/v1/detalles-boleta/boleta/{boletaId}` | GET | Propietario/STAFF | Líneas completas o 404 si aún no generadas |
 | `/api/v1/detalles-boleta/{id}` | GET | Propietario/STAFF | Una línea verificada o 404 |
 
-No existe POST arbitrario de cantidades, precios ni `idProducto`; se extraen de Pedidos después de validar Boleta mediante REST autenticado. `UNIQUE(id_boleta, numero_linea)` y transacción local garantizan una sola copia de cada posición. No es un documento tributario ni indica pago. Persistencia transaccional sobre MySQL 8.4 validada (Gate 3 PASS; ver docs/VERIFICACION_MYSQL_EP3.md). Cambios a tráfico React pendientes para la siguiente fase.
+No existe POST arbitrario de cantidades, precios ni `idProducto`; se extraen de Pedidos después de validar Boleta mediante REST autenticado. `UNIQUE(id_boleta, numero_linea)` y transacción local garantizan una sola copia de cada posición. No es un documento tributario ni indica pago. Persistencia transaccional sobre MySQL 8.4 validada. React invoca este servicio desde `PedidoDetalle.jsx` con botón explícito de emisión y reverificación académica.
 
 
 ## Estados de Pedidos para expiracion opt-in

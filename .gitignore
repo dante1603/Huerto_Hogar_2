@@ -10,5 +10,7 @@
 .idea/
 *.log
 **/*.log
+**/*.json.tmp
+.active_microservices_pids.json
 **/__pycache__/
 *.py[cod]
