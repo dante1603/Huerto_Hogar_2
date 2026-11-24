@@ -67,10 +67,10 @@ class ProductoAdminControllerTest {
         JwtEncoder encoder = new NimbusJwtEncoder(new ImmutableSecret<>(key));
         Instant now = Instant.now();
         var claims = JwtClaimsSet.builder().issuer("huertohogar-usuarios")
-            .subject("42").issuedAt(now).expiresAt(now.plusSeconds(600))
-            .claim("rol", role).build();
+            .subject("42").issuedAt(now).expiresAt(now.plusSeconds(600));
+        if (role != null) claims.claim("rol", role);
         return encoder.encode(JwtEncoderParameters.from(
-            JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
+            JwsHeader.with(MacAlgorithm.HS256).build(), claims.build())).getTokenValue();
     }
 
     private static String valid(String sku, int stock) {
@@ -204,5 +204,13 @@ class ProductoAdminControllerTest {
             .andExpect(jsonPath("$.paths['/api/v1/productos'].post").exists())
             .andExpect(jsonPath("$.paths['/api/v1/productos/{id}'].put").exists())
             .andExpect(jsonPath("$.paths['/api/v1/productos/{id}'].delete").exists());
+    }
+
+    @Test
+    void jwtFirmadoSinRolNoAutorizaEscritura() throws Exception {
+        mvc.perform(post(ROOT).header("Authorization", "Bearer " + token(null))
+            .contentType(MediaType.APPLICATION_JSON).content(valid("SIN-ROL", 2)))
+            .andExpect(status().isForbidden());
+        assertFalse(productos.existsBySku("SIN-ROL"));
     }
 }

@@ -46,7 +46,7 @@ public class DetalleSecurityConfig {
         var converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
             String rol = jwt.getClaimAsString("rol");
-            if (!List.of("CLIENTE", "VENDEDOR", "ADMINISTRADOR").contains(rol))
+            if (rol == null || !List.of("CLIENTE", "VENDEDOR", "ADMINISTRADOR").contains(rol))
                 return List.<GrantedAuthority>of();
             return List.<GrantedAuthority>of(new SimpleGrantedAuthority("ROLE_" + rol));
         });

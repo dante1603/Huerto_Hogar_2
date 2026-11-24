@@ -75,10 +75,10 @@ class PedidoIndependienteTest {
         var encoder=new NimbusJwtEncoder(new ImmutableSecret<>(key));
         Instant now=Instant.now();
         var claims=JwtClaimsSet.builder().issuer("huertohogar-usuarios")
-            .subject(Long.toString(user)).issuedAt(now).expiresAt(now.plusSeconds(600))
-            .claim("rol",rol).build();
+            .subject(Long.toString(user)).issuedAt(now).expiresAt(now.plusSeconds(600));
+        if (rol != null) claims.claim("rol", rol);
         return encoder.encode(JwtEncoderParameters.from(
-            JwsHeader.with(MacAlgorithm.HS256).build(),claims)).getTokenValue();
+            JwsHeader.with(MacAlgorithm.HS256).build(), claims.build())).getTokenValue();
     }
     static String body(int qty) {
         return "{\"planetaDestino\":\"Bruma\",\"productos\":[{\"productoId\":1,\"cantidad\":"+qty+"}]}";
@@ -165,5 +165,11 @@ class PedidoIndependienteTest {
     @Test void swaggerDocumentaLasRutasIndependientes() throws Exception {
         mvc.perform(get("/v3/api-docs")).andExpect(status().isOk())
             .andExpect(jsonPath("$.paths['/api/v1/pedidos'].post").exists());
+    }
+
+    @Test void jwtFirmadoSinRolNoAutorizaPedido() throws Exception {
+        mvc.perform(crear(42, null, UUID.randomUUID().toString(), body(1)))
+            .andExpect(status().isForbidden());
+        assertEquals(0, pedidos.count());
     }
 }
