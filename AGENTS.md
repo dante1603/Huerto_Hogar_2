@@ -1,6 +1,6 @@
-# AGENTS.md — HuertoHogar × Galaxym
+# AGENTS.md — HuertoHogar / Fullstack II
 
-Este repositorio es el workspace principal de integración **Fullstack II**. Sus dependencias y limitaciones importan más que propuestas de reescritura.
+Este repositorio es el workspace académico **Fullstack II**. Alcance vigente 24-11-2026: rúbrica EP3 y AWS; integración funcional con Galaxym descartada. `main` es la base de desarrollo validada por CI, no producción. Sus dependencias y limitaciones importan más que propuestas de reescritura.
 
 ## Estructura y autoridad
 - `backend/catalogo/`: servicio Productos Spring Boot/JPA; conserva Pedidos heredado usado por React. 30 tests en CI.
@@ -12,16 +12,16 @@ Este repositorio es el workspace principal de integración **Fullstack II**. Sus
 - `index.html`, páginas HTML y `assets/`: frontend **legado**, no borrarlo.
 - `Huerto_React.zip`, `Huerto_Hogar_3-main.zip`: artefactos empaquetados. No asumir que son el frontend vigente sin extraer e inspeccionar su código.
 - `docs/CONTRATOS_API.md`: estado de rutas reales versus propuestas.
-- Galaxym vive en otro repo, `dante1603/Galaxym_solar_system`; toda integración con juego es por una API controlada y autenticada.
+- Galaxym vive en otro repositorio y queda fuera de alcance; no introducir nuevas integraciones, telemetría ni entregas del juego.
 
 ## Calidad y alcance
-- Trabajar en rama, cambios pequeños y PR contra `integration/fullstack-2026-11-14`; no fusionar a `main` hasta la validación final ni sobrescribir fuentes externas.
+- Trabajar en ramas pequeñas con PR hacia `main`; PR #8 ya fusionada por autorización explícita del usuario. Promover cortes con pruebas y límites documentados, sin forzar ni desactivar protecciones. No declarar release, entrega ni AWS aprobados por un merge de desarrollo. PR #31 permanece abierta y debe integrar el tráfico React a cinco APIs tras cerrar el backend.
 - Java 21 + Maven, cinco proyectos Spring independientes. No unir `pom.xml` ni homogeneizar paquetes a ciegas.
 - CI backend ejecuta Maven para `catalogo`, `usuarios`, `pedidos`, `boleta` y `detalle-boleta`.
 - Frontend: `cd frontend/tienda && npm install && npm run test && npm run build`. React usa proxy de Vite durante desarrollo; no exponer credenciales en variables `VITE_*`.
 - Usar H2 en perfil demo o tests, MySQL en persistencia real. Una prueba H2 no prueba MySQL.
 - Operaciones públicas de escritura requieren controles reales: JWT/roles, validación, transacciones e idempotencia cuando aplique. No publicar credenciales o tokens y no exponer `DB_PASSWORD` en repositorio.
-- No inventar sincronización juego-cofre: diseñar stock con origen, versión, tiempos y política de desconexión antes de cambios persistentes.
+- Priorizar backend y contratos: completar administración de usuarios, roles, pruebas Maven y REST/MySQL antes de ampliar React. Ver issue #19.
 
 ## GitHub Actions
 - CI backend: cambios en `backend/**`, su workflow o scripts de verificación `scripts/e2e_http_fullstack.py` y `scripts/fault_proxy.py`. Estos scripts son parte del contrato REST backend y deben tener pruebas. Frontend CI continúa limitada a `frontend/tienda/**` o su workflow. Ambas aceptan ejecución manual.
@@ -30,7 +30,7 @@ Este repositorio es el workspace principal de integración **Fullstack II**. Sus
 - No añadir deploy automático ni servicios de nube/facturación sin verificar proyecto y presupuesto.
 
 ## Criterio de finalización
-Entregar commit/PR, diff revisable, tests concretos y límites claros (CI vs QA humano/MySQL/Cloud Run/visual). Actualizar la documentación del propietario ante decisiones duraderas. No confundir una tarea preparada con implementación comprobada.
+Entregar commit/PR, diff revisable, tests concretos y límites claros (CI vs QA humano/MySQL/AWS/visual). Actualizar la documentación del propietario ante decisiones duraderas. No confundir una tarea preparada con implementación comprobada.
 
 ## Pedidos y reserva SQL
 - Coexisten Pedidos legado de Catálogo (usado por React) y Pedidos independiente con reserva HTTP idempotente y compensación por tombstone. No eliminar legado ni redirigir React antes de MySQL real, fallos distribuidos y E2E navegador; no hay transacción global.
