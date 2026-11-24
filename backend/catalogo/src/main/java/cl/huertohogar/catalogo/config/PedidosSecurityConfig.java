@@ -8,6 +8,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import jakarta.servlet.DispatcherType;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -60,7 +61,7 @@ public class PedidosSecurityConfig {
         var converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
             String rol = jwt.getClaimAsString("rol");
-            if (!List.of("CLIENTE", "VENDEDOR", "ADMINISTRADOR").contains(rol)) {
+            if (!List.of("CLIENTE", "VENDEDOR", "ADMINISTRADOR", "SERVICIO_PEDIDOS").contains(rol)) {
                 return List.<GrantedAuthority>of();
             }
             return List.<GrantedAuthority>of(new SimpleGrantedAuthority("ROLE_" + rol));
@@ -75,14 +76,24 @@ public class PedidosSecurityConfig {
             .cors(Customizer.withDefaults())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Conserva el codigo original de error en el dispatch interno /error.
+                .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/productos", "/api/v1/productos/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/productos").hasRole("ADMINISTRADOR")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/productos/*").hasRole("ADMINISTRADOR")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/productos/*").hasRole("ADMINISTRADOR")
                 .requestMatchers(HttpMethod.GET, "/swagger-ui.html", "/swagger-ui/**",
                     "/v3/api-docs", "/v3/api-docs/**").permitAll()
+                // Un rol de servicio firmado, nunca asignable mediante registro publico.
+                .requestMatchers(HttpMethod.GET, "/api/v1/interno/reservas/*").hasRole("SERVICIO_PEDIDOS")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/interno/reservas/*").hasRole("SERVICIO_PEDIDOS")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/interno/reservas/*").hasRole("SERVICIO_PEDIDOS")
                 .requestMatchers(HttpMethod.POST, "/api/v1/pedidos").hasRole("CLIENTE")
                 .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/mios").hasRole("CLIENTE")
                 .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/pendientes")
                     .hasAnyRole("VENDEDOR", "ADMINISTRADOR")
-                .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/*").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/*")
+                    .hasAnyRole("CLIENTE", "VENDEDOR", "ADMINISTRADOR")
                 .anyRequest().denyAll()
             )
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(converter)))
@@ -95,7 +106,7 @@ public class PedidosSecurityConfig {
         var cors = new CorsConfiguration();
         cors.setAllowedOrigins(Arrays.stream(rawOrigins.split(","))
             .map(String::trim).filter(s -> !s.isBlank()).toList());
-        cors.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         cors.setAllowedHeaders(List.of("Content-Type", "Authorization", "Idempotency-Key"));
         cors.setExposedHeaders(List.of("Location"));
         cors.setMaxAge(3600L);

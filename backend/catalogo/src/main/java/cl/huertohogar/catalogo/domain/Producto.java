@@ -48,11 +48,29 @@ public class Producto {
         this.planetaOrigen = planetaOrigen;
     }
 
+    public void actualizar(String sku, String nombre, String descripcion,
+                           BigDecimal precio, int stock, String planetaOrigen) {
+        this.sku = sku;
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.precio = precio;
+        this.stock = stock;
+        this.planetaOrigen = planetaOrigen;
+    }
+
     public void reservar(int cantidad) {
         if (cantidad <= 0 || stock < cantidad) {
             throw new IllegalArgumentException("Reserva invalida");
         }
         this.stock -= cantidad;
+    }
+
+    /** Compensar una reserva; siempre bajo lock de fila y transaccion. */
+    public void reponer(int cantidad) {
+        if (cantidad <= 0 || stock > Integer.MAX_VALUE - cantidad) {
+            throw new IllegalArgumentException("Reposicion invalida");
+        }
+        this.stock += cantidad;
     }
 
     public Long getId() { return id; }

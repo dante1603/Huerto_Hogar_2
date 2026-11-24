@@ -5,6 +5,8 @@ on:
     paths:
       - "backend/**"
       - ".github/workflows/catalogo-ci.yml"
+      - "scripts/e2e_http_fullstack.py"
+      - "scripts/fault_proxy.py"
   workflow_dispatch:
 
 concurrency:
@@ -29,7 +31,29 @@ jobs:
           cache-dependency-path: |
             backend/catalogo/pom.xml
             backend/usuarios/pom.xml
+            backend/pedidos/pom.xml
+            backend/boleta/pom.xml
+            backend/detalle-boleta/pom.xml
+      - name: Empaquetar cinco Spring Boot para HTTP real
+        run: |
+          set -euo pipefail
+          for servicio in catalogo usuarios pedidos boleta detalle-boleta; do
+            mvn -B -ntp -f "backend/$servicio/pom.xml" -DskipTests package
+          done
+      - name: Contrato HTTP cinco procesos separados (H2 demo)
+        timeout-minutes: 8
+        env:
+          E2E_RECONCILIACION: '1'
+        run: python3 scripts/e2e_http_fullstack.py
+
       - name: Test catálogo
         run: mvn -B -ntp -f backend/catalogo/pom.xml test
       - name: Test Usuarios
         run: mvn -B -ntp -f backend/usuarios/pom.xml test
+      - name: Test Pedidos independiente
+        run: mvn -B -ntp -f backend/pedidos/pom.xml test
+      - name: Test Boleta independiente
+        run: mvn -B -ntp -f backend/boleta/pom.xml test
+      - name: Test Detalle Boleta independiente
+        run: mvn -B -ntp -f backend/detalle-boleta/pom.xml test
+

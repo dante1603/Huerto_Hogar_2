@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f4ea">
+<title>Huerto Estelar · Mercado Galaxym</title>
+<style>
+:root{
+  --cream:#f6f4ea;--paper:#fffcf5;--ink:#233d37;--ink-muted:#6d7a69;
+  --sage:#a5b99b;--moss:#566e55;--line:#dce4d4;--mint:#ddebdc;--gold:#eac078;
+  --shadow:0 16px 46px rgba(33,59,42,.075);--r:25px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;min-height:100vh;background:var(--cream);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+body.lock{overflow:hidden}
+button,input{font:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid #8aa971;outline-offset:3px}
+button:disabled{opacity:.42;cursor:not-allowed}
+a{color:inherit;text-decoration:none}
+svg{display:block}
+.shell{width:min(1240px,calc(100% - 48px));margin:auto}
+.topbar{height:86px;display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:13px}
+.brand-mark{height:43px;width:43px;border-radius:15px;background:#24493f;color:#f0f5d5;display:grid;place-items:center;box-shadow:inset 0 0 0 1px #496c59}
+.brand-name{display:block;font-family:Georgia,serif;font-weight:bold;font-size:23px;letter-spacing:-.7px;line-height:1}
+.brand-kicker{display:block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-muted);margin-top:6px}
+.toplinks{display:flex;gap:30px;align-items:center;color:#5e7367;font-size:13px;font-weight:600}
+.toplinks a:hover{text-decoration:underline}
+.cart-top{border:1px solid #bfd2c1;background:var(--paper);border-radius:999px;padding:11px 16px;display:flex;align-items:center;gap:10px;color:var(--ink);font-weight:700;box-shadow:0 5px 14px #2b46330b}
+.count{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px}
+.hero{display:grid;grid-template-columns:1.09fr .91fr;align-items:center;gap:36px;min-height:450px;padding:52px 0 48px}
+.eyebrow{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:750;letter-spacing:2px;color:#5c805b;text-transform:uppercase}
+.eyebrow:before{content:"";width:23px;height:1px;background:#7fa17c}
+h1,h2,h3,p{margin-top:0}
+h1{font-size:clamp(42px,5.7vw,79px);font-family:Georgia,"Times New Roman",serif;letter-spacing:-3px;font-weight:500;line-height:1.04;margin:19px 0 21px}
+h1 em{font-weight:400;color:#62815d}
+.hero p{color:#6d7d71;line-height:1.85;font-size:15px;max-width:480px}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.btn{border:0;border-radius:999px;padding:14px 21px;display:inline-flex;align-items:center;justify-content:center;gap:9px;font-size:13px;font-weight:750;transition:transform .18s,background .18s}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:#264b3e;color:#fff}
+.btn-primary:hover{background:#3b6855}
+.btn-soft{background:#e5eee2;color:#365a43}
+.hero-art{height:360px;position:relative;border-radius:38px;background:radial-gradient(ellipse at 58% 42%,#f3f7e8 0%,#dbe9d7 46%,#d2e2d0 68%,#e9f0e0 100%);overflow:hidden;box-shadow:inset 0 0 0 1px #d2e2d3}
+.hero-art:before,.hero-art:after{content:"";position:absolute;width:420px;height:170px;border:1.5px solid #9abca2;border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-30deg)}
+.hero-art:after{width:320px;height:290px;transform:translate(-50%,-50%) rotate(43deg);opacity:.65}
+.planet{position:absolute;border-radius:50%;box-shadow:inset -16px -22px 30px #142e3340,12px 18px 25px #314b302b;z-index:1}
+.planet.main{width:173px;height:173px;left:calc(50% - 88px);top:calc(50% - 91px);background:repeating-linear-gradient(145deg,transparent 0px,transparent 29px,#4c9e8577 34px,#d0e49b8f 43px,transparent 50px),radial-gradient(circle at 34% 28%,#95dbbd,#367f7c 55%,#315d63)}
+.planet.second{width:88px;height:88px;left:17%;top:15%;background:radial-gradient(circle at 30% 25%,#ffdfa5,#d78072 55%,#76526f)}
+.planet.third{width:53px;height:53px;right:14%;bottom:17%;background:radial-gradient(circle at 30% 25%,#eae5ff,#9984ae 55%,#75587c)}
+.hero-orbit{position:absolute;z-index:2;background:#fffef7;border:1px solid #d7e2d2;color:#54745b;border-radius:999px;padding:8px 14px;font-size:11px;letter-spacing:1.2px;font-weight:800}
+.hero-orbit.one{top:36px;right:31px}.hero-orbit.two{bottom:30px;left:28px}
+.stars{position:absolute;inset:0;opacity:.6;background-image:radial-gradient(#679b7f 1px,transparent 1px);background-size:31px 31px;mask-image:radial-gradient(ellipse,transparent 21%,black 75%)}
+.stats{display:flex;gap:32px;margin-top:27px;color:#718171;font-size:12px}
+.stats strong{font-family:Georgia,serif;color:#345948;font-size:19px;font-weight:600;display:block;margin-bottom:3px}
+.catalog-top{display:flex;justify-content:space-between;align-items:end;gap:24px;border-top:1px solid var(--line);padding:43px 0 27px}
+.section-eyebrow{letter-spacing:2px;color:#81967d;font-size:10px;font-weight:800;text-transform:uppercase}
+h2{font-family:Georgia,serif;letter-spacing:-1px;font-weight:500;font-size:clamp(32px,3.6vw,47px);margin:7px 0 0}
+.catalog-note{color:#718072;font-size:13px;max-width:265px;line-height:1.65;text-align:right}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.filters{display:flex;gap:7px;flex-wrap:wrap}
+.filter{border:1px solid var(--line);background:transparent;color:#6c7b70;padding:9px 17px;border-radius:999px;font-size:12px;font-weight:750}
+.filter.active{background:#2a4c40;color:#fff;border-color:#2a4c40}
+.searchbox{display:flex;gap:9px;align-items:center;border:1px solid var(--line);border-radius:999px;background:var(--paper);padding:10px 15px;color:#718774}
+.searchbox input{width:165px;border:0;background:transparent;outline:none;color:var(--ink);font-size:12px}
+.product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:21px;padding-bottom:35px}
+.product{background:var(--paper);border:1px solid #e3e7da;border-radius:25px;overflow:hidden;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;min-width:0;display:flex;flex-direction:column}
+.product:hover{transform:translateY(-4px);box-shadow:0 20px 44px #283b2c1a}
+.product-visual{position:relative;height:295px;overflow:hidden;background:radial-gradient(circle at 48% 34%,var(--tone1),var(--tone2));display:flex;align-items:center;justify-content:center}
+.product-visual:before{content:"";position:absolute;inset:15px;border:1px solid #ffffffa1;border-radius:18px;pointer-events:none}
+.product-visual:after{content:"";position:absolute;width:44%;height:13px;bottom:30px;left:28%;background:#35483d40;filter:blur(13px);border-radius:50%}
+.product-visual img{object-fit:contain;width:96%;height:97%;position:relative;z-index:1;filter:drop-shadow(0 9px 7px #2d443021)}
+.corner-tag{position:absolute;left:18px;top:17px;background:#fffdf3d9;color:#567565;border:1px solid #ffffff8c;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.6px;padding:7px 12px;z-index:2}
+.inspect-shortcut{position:absolute;right:14px;bottom:13px;background:#fffdf7e6;color:#315c4c;border:1px solid #fff;padding:9px 13px;border-radius:999px;font-size:11px;font-weight:800;z-index:3;display:flex;align-items:center;gap:7px}
+.inspect-shortcut:hover{background:#fff}
+.product-body{padding:22px 23px 21px;display:flex;flex-direction:column;flex:1}
+.product-meta{display:flex;align-items:center;gap:8px;color:#879387;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700}
+.product-meta .dot{height:4px;width:4px;border-radius:50%;background:#a1b5a0}
+.product h3{font:500 29px/1.16 Georgia,serif;letter-spacing:-.6px;margin:11px 0 8px}
+.product-description{color:#738173;font-size:12.5px;line-height:1.65;min-height:41px;margin-bottom:22px}
+.product-bottom{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:auto;border-top:1px solid #e8eae0;padding-top:17px}
+.price{font-family:Georgia,serif;font-size:24px;color:#355e4c;line-height:1}
+.price small{font-family:system-ui,sans-serif;font-size:10px;color:#829084;font-weight:800}
+.add{width:40px;height:40px;display:grid;place-items:center;border:0;background:#e5eee1;color:#2f684e;border-radius:13px;font-size:24px}
+.add:hover{background:#d1e3d0}
+.empty-result{padding:60px 15px;color:var(--ink-muted);text-align:center;display:none}
+.empty-result.visible{display:block}
+.story-band{display:grid;grid-template-columns:1.3fr 1fr;gap:35px;align-items:center;background:#dfe9d8;border:1px solid #cfdfcd;border-radius:30px;padding:40px 45px;margin:18px 0 55px}
+.story-band h2{font-size:32px;margin:8px 0 12px}
+.story-band p{font-size:13px;line-height:1.8;color:#66806d;margin:0;max-width:600px}
+.story-flow{display:flex;align-items:center;gap:9px;justify-content:end;flex-wrap:wrap}
+.story-step{padding:12px 13px;border:1px solid #b7cfb8;background:#f8fbf1;border-radius:14px;text-align:center;font-size:11px;line-height:1.6;font-weight:800;color:#52735e;min-width:95px}
+.story-arrow{color:#96af95}
+footer{border-top:1px solid var(--line);padding:24px 0 33px;display:flex;justify-content:space-between;gap:20px;color:#899488;font-size:11px}
+footer strong{color:#3f6756}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,15px);opacity:0;pointer-events:none;transition:.2s;background:#243e35;color:#fff;padding:12px 20px;border-radius:999px;box-shadow:0 12px 36px #101d1750;z-index:30;font-size:12px;font-weight:650;white-space:nowrap;max-width:calc(100% - 30px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.overlay{position:fixed;inset:0;background:#162c27a8;backdrop-filter:blur(7px);z-index:15;display:none;align-items:center;justify-content:center;padding:22px}
+.overlay.open{display:flex}
+.viewer{width:min(900px,100%);max-height:min(760px,calc(100dvh - 35px));background:var(--paper);border-radius:29px;display:grid;grid-template-columns:minmax(0,1.18fr) minmax(270px,.82fr);overflow:hidden;box-shadow:0 30px 90px #0b16147a}
+.viewer-stage{min-height:480px;position:relative;background:radial-gradient(circle at 44% 38%,var(--tone1,#e0f0da),var(--tone2,#c9dbcc));display:flex;align-items:center;justify-content:center;overflow:hidden}
+.viewer-stage:after{content:"";position:absolute;bottom:15%;width:35%;height:18px;border-radius:50%;background:#28432e33;filter:blur(17px);pointer-events:none}
+#viewerCanvas{display:block;width:100%;height:100%;touch-action:none;position:absolute;inset:0;z-index:1;cursor:grab}
+#viewerCanvas:active{cursor:grabbing}
+.viewer-guidance{position:absolute;bottom:17px;left:50%;transform:translateX(-50%);z-index:2;background:#fffcf2d8;border:1px solid #fff8;border-radius:999px;color:#54705c;padding:9px 14px;white-space:nowrap;font-size:10px;letter-spacing:.2px}
+.viewer-data{padding:51px 31px 32px;overflow-y:auto;display:flex;flex-direction:column}
+.viewer-data h2{font:500 44px/1.03 Georgia,serif;letter-spacing:-1.5px;margin:12px 0 17px}
+.viewer-data p{color:#748273;font-size:13px;line-height:1.85}
+.info-pills{display:flex;gap:7px;flex-wrap:wrap;margin:5px 0 24px}
+.info-pills span{font-size:10px;border:1px solid #d8e5d6;color:#61816b;border-radius:999px;padding:8px 10px;background:#f0f4e9;font-weight:750}
+.spec{display:flex;justify-content:space-between;border-bottom:1px solid #e7e9df;padding:14px 0;font-size:12px;gap:8px}
+.spec dt{color:#879488}.spec dd{margin:0;font-weight:800;color:#395f4d;text-align:right}
+.viewer-actions{margin-top:auto;padding-top:28px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.viewer-actions .price{font-size:27px}
+.close{position:absolute;top:15px;right:15px;border:1px solid #d9e3d7;border-radius:50%;height:36px;width:36px;display:grid;place-items:center;background:#fffcf1;color:#375844;z-index:2;font-size:21px}
+.viewer{position:relative}
+.drawer-backdrop{position:fixed;inset:0;background:#17261b6a;z-index:19;display:none}
+.drawer-backdrop.open{display:block}
+.drawer{position:fixed;right:0;top:0;bottom:0;width:min(420px,100%);background:var(--paper);z-index:20;transform:translateX(103%);transition:transform .26s;box-shadow:-12px 0 45px #102e2226;display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer-head{padding:28px 26px 22px;border-bottom:1px solid #e1e8dd;display:flex;justify-content:space-between;align-items:center;gap:15px}
+.drawer-head h2{font-size:29px}
+.drawer-items{padding:13px 23px;flex:1;overflow-y:auto}
+.drawer-empty{padding:54px 20px;color:#8a9b8b;text-align:center;line-height:1.8;font-size:13px}
+.cart-line{display:flex;gap:13px;padding:15px 0;border-bottom:1px solid #e8ebdf;align-items:center}
+.cart-mini{height:74px;width:74px;flex:0 0 74px;border-radius:17px;display:grid;place-items:center;background:var(--tone2)}
+.cart-mini img{height:72px;width:72px;object-fit:contain}
+.cart-name{font-family:Georgia,serif;font-size:20px;margin-bottom:5px}
+.cart-unit{font-size:12px;color:#7b8d7d}
+.qty{display:flex;align-items:center;gap:11px;margin-top:10px}
+.qty button{height:26px;width:26px;border:1px solid #cfddcf;border-radius:8px;background:#eef5eb;color:#446c52;font-weight:800}
+.qty span{font-size:12px;font-weight:800}
+.drawer-footer{border-top:1px solid #dfe6d9;padding:23px 25px 28px;background:#f8faf2}
+.total{display:flex;justify-content:space-between;align-items:center;margin-bottom:17px;font-size:13px;color:#627b65}
+.total strong{font-family:Georgia,serif;color:#2a4b3e;font-size:26px}
+.drawer-footer .btn{width:100%}
+.legal{font-size:10px;color:#91a093;line-height:1.65;margin:12px 0 0}
+@media(max-width:900px){.hero{grid-template-columns:1fr 1fr}.hero-art{height:310px}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.product-visual{height:270px}.story-band{grid-template-columns:1fr}.story-flow{justify-content:start}.viewer-stage{min-height:430px}}
+@media(max-width:650px){.shell{width:min(100% - 30px,540px)}.topbar{height:71px}.brand-mark{height:38px;width:38px}.brand-name{font-size:20px}.toplinks{display:none}.cart-top{padding:10px 11px;font-size:0}.cart-top .count{font-size:11px}.hero{grid-template-columns:1fr;padding:37px 0 32px;gap:28px}.hero-art{height:240px;order:-1;border-radius:26px}.hero .eyebrow{margin-top:0}h1{font-size:48px;letter-spacing:-1.8px}.hero p{font-size:13px}.hero-actions{margin-top:21px}.hero .stats{margin-top:24px}.hero-orbit.one{top:17px;right:17px}.hero-orbit.two{bottom:14px;left:17px}.planet.main{width:125px;height:125px;left:calc(50% - 63px);top:calc(50% - 62px)}.planet.second{width:64px;height:64px}.planet.third{width:44px;height:44px}.catalog-top{padding:34px 0 19px;align-items:start}.catalog-note{display:none}.toolbar{align-items:stretch}.searchbox{width:100%}.searchbox input{flex:1;width:100%}.product-grid{gap:12px}.product-visual{height:215px}.product-body{padding:17px 15px}.product h3{font-size:23px}.product-description{font-size:11px;line-height:1.6;min-height:53px}.product-meta{font-size:9px}.price{font-size:20px}.product-bottom{gap:3px}.add{height:35px;width:35px;border-radius:10px}.corner-tag{top:10px;left:10px;font-size:9px;padding:5px 8px}.inspect-shortcut{bottom:9px;right:9px;padding:7px 8px;font-size:10px}.story-band{padding:26px 22px;margin-bottom:35px;gap:23px}.story-band h2{font-size:27px}.story-step{min-width:auto;padding:8px 9px}.story-arrow{display:none}footer{flex-direction:column;gap:7px}.viewer{display:flex;flex-direction:column;overflow-y:auto;max-height:calc(100dvh - 24px);border-radius:24px}.overlay{padding:12px}.viewer-stage{min-height:290px;height:40dvh;max-height:430px;flex-shrink:0}.viewer-data{overflow:visible;padding:23px 25px 27px}.viewer-data h2{font-size:34px}.viewer-data p{line-height:1.6}.viewer-actions{padding-top:20px}.viewer-guidance{bottom:12px}.close{top:9px;right:9px}}
+@media(max-width:360px){.product-grid{grid-template-columns:1fr}.product-visual{height:290px}.product-description{min-height:auto}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;scroll-behavior:auto!important}}
+@media(prefers-color-scheme:dark){
+ :root{--cream:#1b2521;--paper:#26352c;--ink:#e3edda;--ink-muted:#aabca9;--line:#465a49;--mint:#334c39;--shadow:0 15px 42px #111d1740}
+ body{color:var(--ink)}.hero p,.catalog-note,.product-description,.product-meta,.story-band p{color:#acbfad}
+ .toplinks,.brand-kicker{color:#b3c6ad}.product{border-color:#43594a}
+ .product-bottom,.drawer-head,.drawer-footer,.cart-line{border-color:#425648}
+ .product h3,.viewer-data h2{color:#e4f0e4}.price,.price small,.spec dd,.total strong{color:#c9e7bc}
+ .searchbox,.cart-top{background:#2c3e32;color:#dfefdb;border-color:#53705a}
+ .searchbox input{color:#ecf5e7}.filter{color:#d2dccb}
+ .filter.active,.btn-primary{background:#577964}.btn-soft,.add,.qty button{background:#355140;color:#d5f1d5}
+ .story-band{background:#304438;border-color:#415a45}
+ .story-step{background:#2b3c31;border-color:#5a725c;color:#cce7c3}
+ .viewer,.drawer{background:#26352c}.viewer-data p,.spec dt{color:#a8bca9}.info-pills span{background:#365040;border-color:#536b54;color:#d5efd3}
+ .drawer-footer{background:#26392b}.cart-unit,.total{color:#b6c8b0}.legal{color:#adbaab}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+<header class="topbar">
+  <a class="brand" href="#inicio" aria-label="Volver al inicio">
+    <span class="brand-mark"><svg width="27" height="27" viewBox="0 0 32 32" fill="none"><path d="M5 21c4-4 15-5 21 2M9 17c4 3 11 3 15-1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M16 20c-7-6-7-12 1-15 2 6 2 9-1 15Zm0 0c4-9 9-9 13-6-2 6-7 8-13 6Z" fill="#a5c29b" stroke="currentColor" stroke-width="1.1"/></svg></span>
+    <span><span class="brand-name">Huerto Estelar</span><span class="brand-kicker">Mercado · Galaxym</span></span>
+  </a>
+  <nav class="toplinks" aria-label="Navegación"><a href="#catalogo">El catálogo</a><a href="#historia">Cómo funciona</a><a href="#pie">Sobre este prototipo</a></nav>
+  <button class="cart-top" id="openCart" aria-label="Abrir cesta">🛒 <span>Cesta</span> <span class="count" id="cartCount">0</span></button>
+</header>
+<main id="inicio">
+<section class="hero">
+  <div>
+    <span class="eyebrow">Colección botánica interestelar</span>
+    <h1>Sabores de<br><em>otros mundos.</em></h1>
+    <p>De las cosechas de Bruma a los cultivos de las estaciones orbitales: descubre seis especies extraordinarias. Un pequeño mercado galáctico, abastecido por los Snailsoon.</p>
+    <div class="hero-actions"><a href="#catalogo" class="btn btn-primary">Explorar cultivos <span aria-hidden="true">↗</span></a><a href="#historia" class="btn btn-soft">Cómo se entregan</a></div>
+    <div class="stats"><span><strong>06</strong> especies</span><span><strong>3D</strong> low-poly</span><span><strong>∞</strong> mundos por explorar</span></div>
+  </div>
+  <div class="hero-art" aria-label="Ilustración decorativa de mundos agrícolas">
+    <div class="stars"></div><span class="planet main"></span><span class="planet second"></span><span class="planet third"></span>
+    <span class="hero-orbit one">✧ COSECHA EXÓTICA</span><span class="hero-orbit two">🌱 SNAILSOON · SUPPLY</span>
+  </div>
+</section>
+<section id="catalogo">
+  <div class="catalog-top"><div><div class="section-eyebrow">✳ Herbario comercial / v.01</div><h2>El catálogo</h2></div><p class="catalog-note">Cada cultivo tiene un modelo 3D propio. Ábrelo para girarlo y examinarlo.</p></div>
+  <div class="toolbar">
+    <div class="filters" role="group" aria-label="Filtrar cultivos">
+      <button class="filter active" data-filter="todos" aria-pressed="true">Todos · 06</button>
+      <button class="filter" data-filter="verdura" aria-pressed="false">Verduras · 03</button>
+      <button class="filter" data-filter="fruta" aria-pressed="false">Frutas · 03</button>
+    </div>
+    <label class="searchbox"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input id="search" type="search" placeholder="Buscar especie..." aria-label="Buscar especie"></label>
+  </div>
+  <div id="grid" class="product-grid" aria-live="polite"></div><div class="empty-result" id="emptyResult">Ninguna especie coincide con la búsqueda 🌿</div>
+</section>
+<section id="historia" class="story-band">
+ <div><div class="section-eyebrow">La conexión con el videojuego</div><h2>De la tienda a tu nave.</h2><p>En esta demostración puedes reunir productos en la cesta y exportar un pedido JSON. En el proyecto Full Stack, ese pedido podrá convertirse en una misión de transporte para tu nave en Galaxym. Todavía no se envía a ningún servidor.</p></div>
+ <div class="story-flow"><span class="story-step">01<br>🛒 Comprar</span><span class="story-arrow">→</span><span class="story-step">02<br>📦 Pedido</span><span class="story-arrow">→</span><span class="story-step">03<br>🚀 Entregar</span></div>
+</section>
+</main>
+<footer id="pie"><span><strong>HUERTO ESTELAR</strong> · Catálogo ficticio del universo Galaxym</span><span>Modelos 3D procedurales · archivo HTML independiente · precios de demostración</span></footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<div id="inspectOverlay" class="overlay" role="dialog" aria-modal="true" aria-label="Visor de producto 3D">
+  <div class="viewer">
+    <button class="close" id="closeInspect" aria-label="Cerrar visor">×</button>
+    <div class="viewer-stage" id="viewerStage"><canvas id="viewerCanvas" aria-label="Modelo tridimensional interactivo"></canvas><div class="viewer-guidance">↔ Arrastra para girar · pellizca para zoom</div></div>
+    <div class="viewer-data">
+      <span class="section-eyebrow" id="viewCategory">Especie botánica</span><h2 id="viewName"></h2>
+      <p id="viewDescription"></p><div class="info-pills" id="viewPills"></div>
+      <dl><div class="spec"><dt>Procedencia</dt><dd id="viewOrigin"></dd></div><div class="spec"><dt>Perfil de sabor</dt><dd id="viewTaste"></dd></div><div class="spec"><dt>Disponibilidad</dt><dd>En temporada</dd></div></dl>
+      <div class="viewer-actions"><span class="price" id="viewPrice"></span><button class="btn btn-primary" id="viewAdd">Añadir a cesta ＋</button></div>
+    </div>
+  </div>
+</div>
+<div id="drawerBackdrop" class="drawer-backdrop"></div>
+<aside id="drawer" class="drawer" aria-label="Cesta de compras" aria-hidden="true">
+  <div class="drawer-head"><div><div class="section-eyebrow">Pedido de prueba</div><h2>Tu cesta</h2></div><button class="close" id="closeCart" style="position:static" aria-label="Cerrar cesta">×</button></div>
+  <div id="cartItems" class="drawer-items"></div>
+  <div class="drawer-footer"><div class="total"><span>Subtotal estimado</span><strong id="total">0 CR</strong></div><button id="exportOrder" class="btn btn-primary">↓ Exportar pedido JSON</button><p class="legal">Exportación local para conectar más adelante con Spring Boot. No procesa pagos ni genera misiones reales.</p></div>
+</aside>
+<script>
+"use strict";
+const PRODUCTS=[
+ {id:"zorbulbo",name:"Zorbulbo",type:"verdura",typeLabel:"Verdura raíz",price:18,tone1:"#e7f6df",tone2:"#c9e4d8",origin:"Invernaderos de Bruma",taste:"Dulce y terroso",tags:["Bulbo","Bioluminiscente"],desc:"Bulbo crujiente de hojas turquesas y raíces violetas. Ideal para guisos de gravedad cero.",detail:"Sus raíces se enroscan para captar humedad bajo la tierra. Al cortarlo, sus vetas rosadas desprenden un aroma vegetal suave."},
+ {id:"lunahoja",name:"Lunahoja",type:"verdura",typeLabel:"Verdura de hoja",price:14,tone1:"#f3f8dc",tone2:"#d6e8dd",origin:"Huertos lunares",taste:"Fresco, ligeramente cítrico",tags:["Hojas","Cultivo nocturno"],desc:"Hojas en forma de luna creciente que conservan un delicado resplandor plateado.",detail:"Una variedad de hoja ligera y delicada. Sus brotes se cierran durante los eclipses y se abren ante luces tenues."},
+ {id:"crisollo",name:"Crisollo",type:"verdura",typeLabel:"Verdura cristalina",price:32,tone1:"#e4f7e3",tone2:"#c7e8df",origin:"Hidroponía orbital",taste:"Mineral y ligeramente dulce",tags:["Cristalino","Exótico"],desc:"Ramilletes facetados que recuerdan al brócoli y concentran savia verde luminosa.",detail:"Las inflorescencias minerales crecen sobre un tallo violeta. Al cocinarse pierden transparencia y desarrollan una textura cremosa."},
+ {id:"solabaya",name:"Solabaya",type:"fruta",typeLabel:"Fruta de racimo",price:23,tone1:"#fff0d8",tone2:"#f2d5bc",origin:"Valles cálidos de Bruma",taste:"Miel, mandarina y néctar",tags:["Racimo","Jugosa"],desc:"Racimos de bayas doradas con pulpa translúcida y un intenso perfume cítrico.",detail:"Cada baya almacena azúcares en pequeñas cámaras luminosas. Se transporta en racimos para evitar dañar su delicada piel."},
+ {id:"nebupoma",name:"Nebupoma",type:"fruta",typeLabel:"Fruta de pepita",price:38,tone1:"#f5e7f4",tone2:"#ddd6ed",origin:"Jardines de estación",taste:"Ciruela y frutos rojos",tags:["Rara","Piel estrellada"],desc:"Fruto de piel violeta moteada, con un surco luminoso que parece una pequeña nebulosa.",detail:"La cáscara refleja bandas irisadas bajo distintas fuentes de luz. Su pulpa es firme y desprende jugo de tono rubí."},
+ {id:"miramelon",name:"Miramelón",type:"fruta",typeLabel:"Fruta de pulpa",price:27,tone1:"#fff3d5",tone2:"#e6e9c5",origin:"Huertas templadas",taste:"Melón, flor y miel",tags:["Semillas perladas","Dulce"],desc:"Melón de corteza rayada y pulpa ámbar. Sus semillas recuerdan a pequeñas perlas.",detail:"Su gruesa corteza verde protege la pulpa durante viajes largos. Es una fruta popular entre los transportistas espaciales."}
+];
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rand=(a,b,c=0)=>{let n=Math.sin(a*127.1+b*311.7+c*78.233)*43758.5453;return n-Math.floor(n)};
+const V=(x,y,z)=>[x,y,z];
+const mix=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+const plus=(a,b)=>a.map((v,i)=>v+b[i]);
+const sub=(a,b)=>a.map((v,i)=>v-b[i]);
+const mul=(a,s)=>a.map(v=>v*s);
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const norm=a=>{const l=Math.hypot(...a)||1;return mul(a,1/l)};
+const hex=h=>{h=h.replace("#","");return [parseInt(h.substring(0,2),16)/255,parseInt(h.substring(2,4),16)/255,parseInt(h.substring(4,6),16)/255]};
+class Sculpt{
+ constructor(){this.p=[];this.n=[];this.c=[]}
+ tri(a,b,c,color){const n=norm(cross(sub(b,a),sub(c,a)));const col=typeof color==="string"?hex(color):color;for(const point of [a,b,c]){this.p.push(...point);this.n.push(...n);this.c.push(...col)}}
+ quad(a,b,c,d,col){this.tri(a,b,c,col);this.tri(a,c,d,col)}
+ ellipsoid(center,radii,palette,opts={}){
+  const rings=opts.rings||9,parts=opts.parts||12,fn=opts.shape||(()=>1);
+  const rot=opts.spin||0;
+  const point=(i,j)=>{let t=Math.PI*i/rings,ang=2*Math.PI*j/parts+rot+Math.cos(t)*(.07+(opts.twist||0));let pulse=fn(t,ang,i,j);return [center[0]+radii[0]*Math.sin(t)*Math.cos(ang)*pulse,center[1]+radii[1]*Math.cos(t),center[2]+radii[2]*Math.sin(t)*Math.sin(ang)*pulse]};
+  for(let i=0;i<rings;i++)for(let j=0;j<parts;j++){
+   const a=point(i,j),b=point(i+1,j),c=point(i+1,j+1),d=point(i,j+1);
+   let color=typeof palette==="function"?palette(i,j,rings,parts):palette[(j+Math.floor(i/3))%palette.length];
+   this.quad(a,b,c,d,color);
+  }
+ }
+ tube(points,radii,palette,parts=6){
+  const pcount=points.length;if(pcount<2)return;
+  let rings=[];
+  for(let i=0;i<pcount;i++){
+   const tangent=norm(sub(points[Math.min(pcount-1,i+1)],points[Math.max(0,i-1)]));
+   let ax=Math.abs(dot(tangent,[0,1,0]))>.84?[1,0,0]:[0,1,0];let u=norm(cross(tangent,ax)),v=norm(cross(tangent,u));const ring=[];
+   for(let j=0;j<parts;j++){let angle=j*2*Math.PI/parts;ring.push(plus(points[i],mul(plus(mul(u,Math.cos(angle)),mul(v,Math.sin(angle))),Array.isArray(radii)?radii[i]:radii)));}
+   rings.push(ring);
+  }
+  for(let i=0;i<pcount-1;i++)for(let j=0;j<parts;j++){this.quad(rings[i][j],rings[i+1][j],rings[i+1][(j+1)%parts],rings[i][(j+1)%parts],palette[(i+j)%palette.length]);}
+ }
+ stem(a,b,r1,r2,palette,seg=6){
+  const mid=mix(a,b,.54);this.tube([a,mid,b],[r1,(r1+r2)*.5,r2],palette,seg)
+ }
+ leaf(a,b,width,palette,opt={}){
+  const n=opt.segments||7,arch=opt.arch||0.28,turn=opt.turn||0;
+  const dir=norm(sub(b,a));let across=norm(cross(dir,[0,0,1]));if(Math.hypot(...across)<.1)across=[1,0,0];
+  const bulge=norm(cross(across,dir));
+  let prev=null;
+  for(let i=0;i<=n;i++){
+   let t=i/n,blade=width*Math.pow(Math.sin(t*Math.PI),.78)*(1-.13*t);
+   let center=plus(mix(a,b,t),mul(bulge,Math.sin(t*Math.PI)*arch));
+   center=plus(center,mul(across,Math.sin(t*Math.PI)*turn*t));
+   let l=plus(center,mul(across,-blade)),r=plus(center,mul(across,blade));
+   let mid=plus(center,mul(bulge,blade*.19));
+   if(prev){
+    this.tri(prev.l,prev.m,l,palette[0]);this.tri(l,prev.m,mid,palette[1]);
+    this.tri(prev.m,prev.r,mid,palette[2]);this.tri(mid,prev.r,r,palette[1]);
+    this.tri(l,prev.m,prev.l,palette[0]);this.tri(mid,prev.m,l,palette[1]);
+    this.tri(mid,prev.r,prev.m,palette[2]);this.tri(r,prev.r,mid,palette[1]);
+   }
+   prev={l,r,m:mid};
+  }
+ }
+ gem(c,r,h,palette,sides=5){
+  let lower=[],wide=[],upper=[];
+  for(let j=0;j<sides;j++){let a=j*Math.PI*2/sides;const v=[Math.cos(a),0,Math.sin(a)];lower.push(plus(c,mul(v,r*.68)));wide.push(plus(plus(c,[0,h*.32,0]),mul(v,r)));upper.push(plus(plus(c,[0,h*.78,0]),mul(v,r*.53)));}
+  const peak=plus(c,[0,h,0]);
+  for(let j=0;j<sides;j++){let k=(j+1)%sides;this.quad(lower[j],wide[j],wide[k],lower[k],palette[j%palette.length]);this.quad(wide[j],upper[j],upper[k],wide[k],palette[(j+1)%palette.length]);this.tri(upper[j],peak,upper[k],palette[(j+2)%palette.length]);}
+ }
+ finalize(){const p=new Float32Array(this.p),n=new Float32Array(this.n),c=new Float32Array(this.c);let lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];for(let i=0;i<p.length;i+=3){for(let d=0;d<3;d++){lo[d]=Math.min(lo[d],p[i+d]);hi[d]=Math.max(hi[d],p[i+d])}}
+  const center=lo.map((x,i)=>(x+hi[i])/2);const scale=2.9/Math.max(hi[0]-lo[0],hi[1]-lo[1],hi[2]-lo[2]);for(let i=0;i<p.length;i+=3)for(let d=0;d<3;d++)p[i+d]=(p[i+d]-center[d])*scale;return {p,n,c,count:p.length/3};}
+}
+const TAU=Math.PI*2;
+function makeProduct(id){
+ const s=new Sculpt();
+ if(id==="zorbulbo"){
+  s.ellipsoid([0,-.06,0],[1.08,.93,.97],["#3b9d92","#5fb7a8","#73bbaa","#399c8f","#41999b","#76b98f","#68a4b5","#6bbfa6"],{rings:10,parts:14,twist:.6,shape:(t,a)=>1+.054*Math.sin(7*a+2.5*t)});
+  for(let k=0;k<7;k++){let a=k*TAU/7+.3;const from=[.52*Math.cos(a),-.65,.52*Math.sin(a)],to=[.40*Math.cos(a+.55),.88,.40*Math.sin(a+.55)];s.leaf(from,to,.36,["#337c76","#71bca0","#80d6b4"],{arch:.31,turn:.12})}
+  for(let i=0;i<12;i++){const a=i*TAU/12;let pts=[[.29*Math.cos(a),-.7,.29*Math.sin(a)],[.52*Math.cos(a),-1.02,.54*Math.sin(a)],[.95*Math.cos(a+.22),-1.25,.86*Math.sin(a+.22)],[1.24*Math.cos(a+.4),-1.18,1.12*Math.sin(a+.4)]];s.tube(pts,[.09,.075,.05,.008],["#994a8d","#c064ab","#824a91","#d475bd"],5)}
+  for(let i=0;i<5;i++){let a=i*TAU/5;s.tube([[0,.67,0],[.25*Math.cos(a),1.14,.25*Math.sin(a)],[.38*Math.cos(a),1.34,.38*Math.sin(a)]],[.085,.06,.03],["#8f528d","#af62ac"],5);s.leaf([.38*Math.cos(a),1.27,.38*Math.sin(a)],[.65*Math.cos(a),1.52,.65*Math.sin(a)],.15,["#70b68b","#c6e58d","#8ed8a0"],{arch:.07})}
+ }
+ else if(id==="lunahoja"){
+  s.ellipsoid([0,-.67,0],[.36,.49,.36],["#86c98b","#d8eea0","#c8eca9"],{rings:8,parts:10});
+  for(let k=0;k<14;k++){
+   const a=k*TAU/14,r=.16+(k%3)*.065;let tipR=.80+(k%4)*.18;
+   const from=[r*Math.cos(a),-1.06,r*Math.sin(a)],tip=[tipR*Math.cos(a+.25),.85+(k%4)*.21,tipR*Math.sin(a+.25)];
+   s.leaf(from,tip,.22+(k%3)*.065,["#7badb5","#dcf5b2","#b2e6cd"],{arch:.16+(k%2)*.11,turn:(k%2?-.22:.21),segments:8});
+  }
+  for(let j=0;j<4;j++){let a=j*TAU/4;s.tube([[.1*Math.cos(a),-1.05,.1*Math.sin(a)],[.52*Math.cos(a),-.94,.52*Math.sin(a)],[.77*Math.cos(a+.22),-.75,.77*Math.sin(a+.22)]],[.045,.034,.012],["#9683a9","#b4a7bf"],6)}
+ }
+ else if(id==="crisollo"){
+  s.tube([[0,-1.32,0],[0,-1.06,0],[0,-.49,0],[0,.02,0]],[.30,.39,.24,.13],["#8d57a2","#aa6bbc","#7b4e9c"],7);
+  for(let k=0;k<9;k++){const a=k*TAU/9,r=.68+(k%2)*.20;let base=[0,-.55,0],mid=[r*.62*Math.cos(a),.14,r*.62*Math.sin(a)],top=[r*Math.cos(a),.45+(k%3)*.13,r*Math.sin(a)];s.tube([base,mid,top],[.15,.10,.07],["#8f57a5","#b175c8","#7657a7"],6)}
+  const centers=[[0,.66,0],[.57,.61,.17],[-.57,.52,.17],[.14,.54,-.55],[-.2,.45,.67],[.75,.24,-.40],[-.65,.29,-.40]];
+  centers.forEach((c,k)=>{let big=k===0?.58:.38;for(let i=0;i<19;i++){let ang=TAU*i/19,ring=i<7?.25:.75,rr=big*Math.sqrt((i+.5)/19);let off=[Math.cos(ang*(i<7?1:3))*rr,.1*Math.sin(i*2),Math.sin(ang*(i<7?1:3))*rr];let pos=plus(c,off);s.gem(pos,.10+rand(i,k)*.055,.23+rand(i+3,k)*.24,["#70c9b7","#5dd4c7","#a9e78b","#86d3bc","#48b5ba"],5)}});
+  for(let i=0;i<5;i++){let a=i*TAU/5;s.leaf([0,-1.05,0],[.70*Math.cos(a),-.80,.70*Math.sin(a)],.18,["#4f9e8e","#a0dba2","#6bb8a0"],{arch:.13})}
+ }
+ else if(id==="solabaya"){
+  s.tube([[-.67,1.2,0],[-.10,1.45,0],[.51,1.33,0]],[.15,.125,.09],["#8c536f","#bc6976","#d39b5a"],7);
+  s.leaf([-.15,1.43,0],[-1.25,1.63,.1],.37,["#2a8a7a","#60bd96","#91dba0"],{arch:.2,turn:.08});
+  s.leaf([.3,1.36,.04],[1.22,1.5,-.04],.38,["#348d8e","#8bd4a0","#6db99b"],{arch:.2});
+  for(let i=0;i<13;i++){
+   let row=Math.floor(i/4),col=i%4,xx=(col-1.5)*.38+(row%2)*.1,yy=.70-row*.48+rand(i,2)*.08,zz=(rand(i,4)-.5)*.35;
+   const center=[xx,yy,zz];s.tube([[xx*.32,1.3,0],[xx*.72,yy+.29,zz*.45],[xx,yy+.12,zz]],[.047,.032,.012],["#a65371","#d98770"],5);
+   const r=.28+(i%3)*.025;
+   s.ellipsoid(center,[r,r*.99,r],(lat,j,rows)=>lat<rows/2?["#e37e69","#e79359","#ffbb62"][j%3]:["#efaa44","#f4a756","#e87f5b"][j%3],{rings:7,parts:9});
+   s.gem([xx,yy+r*.79,zz],.11,.095,["#b75b79","#de7a7a","#a64e7b"],5);
+  }
+ }
+ else if(id==="nebupoma"){
+  const palette=["#7754ad","#7a5eae","#675cac","#a456b1","#b14b9e","#684c9b","#b458ab","#8056ac","#b8589c","#9f4a9c","#62458a","#9255bd","#c85aa7","#a446a9","#71549a","#bd5693"];
+  s.ellipsoid([0,-.10,0],[1.02,1.12,1.02],(i,j,rings)=>palette[(j+Math.floor(i*.9))%palette.length],{rings:15,parts:16,twist:.48,shape:(t,a)=>1+.045*Math.cos(8*a+Math.sin(t)*2)});
+  const seam=[];for(let i=0;i<=29;i++){let t=i/29;let a=-.95+t*TAU*.95;seam.push([1.02*Math.sin(a),-.1+.47*Math.sin(t*Math.PI*2+.3),1.05*Math.cos(a)]);}
+  s.tube(seam,.025,["#edb2cf","#ffd0c8","#ff91c5"],5);
+  for(let i=0;i<45;i++){const t=.35+rand(i,3)*2.32,a=rand(i,9)*TAU,r=1.04;s.gem([r*Math.sin(t)*Math.cos(a),-.1+1.14*Math.cos(t),r*Math.sin(t)*Math.sin(a)],.019,.035,["#ffb3dc","#d9aedc","#ffe0ba"],4)}
+  s.tube([[0,.98,0],[.05,1.28,0],[.26,1.47,.07]],[.12,.08,.052],["#8f547f","#b47a76"],6);
+  s.leaf([.1,1.25,.05],[-.79,1.65,.05],.30,["#449d89","#8bcf9e","#60c0a7"],{arch:.11});
+  s.leaf([.23,1.38,0],[.95,1.62,-.07],.22,["#418c78","#a6dc9e","#6fc4a8"],{arch:.15});
+ }
+ else if(id==="miramelon"){
+  s.ellipsoid([-.32,0,-.19],[.96,1.05,.83],(i,j,rings,parts)=>{let band=(j+Math.floor(.6*i))%parts;return Math.floor(band/2)%2===0?["#599f69","#7bb168","#528c6c"][j%3]:["#efb55c","#d6a35c","#e8ba67"][j%3]}, {rings:12,parts:16,twist:.18,shape:(t,a)=>1+.03*Math.cos(a*8)});
+  const center=[.48,-.61,.78],rad=.80;
+  let frontCenter=center,backCenter=plus(center,[0,0,-.16]),lastF=null,lastB=null;
+  for(let j=0;j<=14;j++){
+   let a=-.28+j*Math.PI/14*1.18,p=[center[0]+rad*Math.cos(a),center[1]+rad*Math.sin(a),center[2]],q=[p[0],p[1],p[2]-.16];
+   if(lastF){s.tri(frontCenter,lastF,p,j%2?"#ffc56a":"#f5ac4e");s.tri(backCenter,q,lastB,"#5d9e62");s.quad(lastF,lastB,q,p,j%2?"#5c966c":"#7fa86d")}
+   if(j>0&&j<14){let q2=mix(center,p,.55);s.gem([q2[0],q2[1],center[2]+.025],.075,.12,["#ffedaa","#fcebc7","#e8d5bd"],5)}
+   lastF=p;lastB=q;
+  }
+  s.tube([[0,.93,-.13],[.13,1.19,-.13],[.36,1.32,-.12]],[.09,.065,.042],["#668f50","#8d9860"],6);
+  s.leaf([.19,1.13,-.12],[.97,1.53,-.10],.22,["#52966c","#a6cd81","#69b584"],{arch:.14});
+  s.leaf([.11,1.16,-.12],[-.58,1.55,-.12],.22,["#4c8d63","#a7c17b","#84bd8f"],{arch:.15});
+  s.gem([.12,1.22,-.12],.17,.25,["#ffe5a1","#ffc77d","#f7b864"],6);
+ }
+ return s.finalize();
+}
+const MESHES={};for(const p of PRODUCTS)MESHES[p.id]=makeProduct(p.id);
+let gl,ctx2d,program,attributes={},uniforms={},activeId=null,viewerFrame=0,drag=false,lastPointer=null,pinchDist=0,angle=.6,pitch=.22,distance=4.9,auto=true,modelBuffers={};
+const vert=`
+attribute vec3 aPos;attribute vec3 aNorm;attribute vec3 aCol;
+uniform float uYaw,uPitch,uAspect,uDist,uFocal;
+varying vec3 vN;varying vec3 vC;
+void main(){
+ float cy=cos(uYaw),sy=sin(uYaw),cx=cos(uPitch),sx=sin(uPitch);
+ vec3 p=vec3(cy*aPos.x+sy*aPos.z,aPos.y,-sy*aPos.x+cy*aPos.z);
+ vec3 n=vec3(cy*aNorm.x+sy*aNorm.z,aNorm.y,-sy*aNorm.x+cy*aNorm.z);
+ p=vec3(p.x,cx*p.y-sx*p.z,sx*p.y+cx*p.z);
+ n=vec3(n.x,cx*n.y-sx*n.z,sx*n.y+cx*n.z);
+ float d=uDist-p.z;
+ gl_Position=vec4(p.x*uFocal/uAspect,p.y*uFocal,1.005*d-.2005,d);
+ vN=n;vC=aCol;
+}`;
+const frag=`
+precision mediump float;varying vec3 vN;varying vec3 vC;
+void main(){
+ vec3 n=normalize(vN);vec3 light=normalize(vec3(-.40,.83,1.0));
+ float lambert=max(dot(n,light),0.0);
+ float rim=pow(1.0-abs(n.z),3.0);
+ float lighting=.67+.47*lambert+.13*rim;
+ gl_FragColor=vec4(min(vC*lighting,vec3(1.0)),1.0);
+}`;
+function shader(type,src){let sh=gl.createShader(type);gl.shaderSource(sh,src);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(sh));return sh}
+function initGL(){
+ const canvas=$("viewerCanvas");gl=canvas.getContext("webgl",{alpha:true,antialias:true,depth:true,preserveDrawingBuffer:true,premultipliedAlpha:false,powerPreference:"low-power"});
+ if(!gl)throw Error("Este dispositivo no admite WebGL");
+ program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,vert));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,frag));gl.linkProgram(program);
+ if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error("No se pudo iniciar el visor 3D");
+ gl.useProgram(program);for(const key of ["aPos","aNorm","aCol"])attributes[key]=gl.getAttribLocation(program,key);
+ for(const key of ["uYaw","uPitch","uAspect","uDist","uFocal"])uniforms[key]=gl.getUniformLocation(program,key);
+ gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.disable(gl.CULL_FACE);
+ for(const item of PRODUCTS){
+  const mesh=MESHES[item.id],buffers=[];
+  for(const arr of [mesh.p,mesh.n,mesh.c]){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,arr,gl.STATIC_DRAW);buffers.push(b)}
+  modelBuffers[item.id]=buffers;
+ }
+}
+function render2d(id,w,h,yaw,pit,dist){
+ if(!ctx2d)ctx2d=$("viewerCanvas").getContext("2d",{alpha:true});
+ const c=ctx2d;if(!c)return;
+ c.clearRect(0,0,w,h);const mesh=MESHES[id],faces=[];
+ const sy=Math.sin(yaw),cy=Math.cos(yaw),sx=Math.sin(pit),cx=Math.cos(pit);
+ const light=norm([-.4,.83,1.0]);
+ for(let i=0;i<mesh.p.length;i+=9){
+  const pts=[];let depth=0;
+  for(let j=0;j<3;j++){
+   const o=i+j*3;const x=mesh.p[o],y=mesh.p[o+1],z=mesh.p[o+2];
+   const rx=cy*x+sy*z,rz=-sy*x+cy*z;
+   const ry=cx*y-sx*rz,pz=sx*y+cx*rz;
+   const dz=Math.max(.1,dist-pz);depth+=dz;
+   pts.push([w/2+rx*2.35*h/(2*dz),h/2-ry*2.35*h/(2*dz)]);
+  }
+  const nx=mesh.n[i],ny=mesh.n[i+1],nz=mesh.n[i+2];
+  const rnx=cy*nx+sy*nz,rnz=-sy*nx+cy*nz;
+  const rny=cx*ny-sx*rnz,nnz=sx*ny+cx*rnz;
+  const intensity=.67+.47*Math.max(0,rnx*light[0]+rny*light[1]+nnz*light[2])+.13*Math.pow(1-Math.abs(nnz),3);
+  const color=[mesh.c[i],mesh.c[i+1],mesh.c[i+2]].map(n=>Math.min(255,Math.round(n*intensity*255)));
+  faces.push({pts,depth:depth/3,color:`rgb(${color.join(',')})`});
+ }
+ faces.sort((a,b)=>b.depth-a.depth);
+ for(const f of faces){c.beginPath();c.moveTo(f.pts[0][0],f.pts[0][1]);c.lineTo(f.pts[1][0],f.pts[1][1]);c.lineTo(f.pts[2][0],f.pts[2][1]);c.closePath();c.fillStyle=f.color;c.fill();}
+}
+function render3d(id,w,h,yaw,pit,dist,resize=true){
+ if(!gl&&!ctx2d)return;
+ const canvas=$("viewerCanvas");
+ if(resize){if(canvas.width!==w)canvas.width=w;if(canvas.height!==h)canvas.height=h}
+ if(!gl){render2d(id,w,h,yaw,pit,dist);return}
+ gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ gl.useProgram(program);gl.uniform1f(uniforms.uYaw,yaw);gl.uniform1f(uniforms.uPitch,pit);gl.uniform1f(uniforms.uAspect,w/h);gl.uniform1f(uniforms.uDist,dist);gl.uniform1f(uniforms.uFocal,2.35);
+ const buffers=modelBuffers[id];
+ for(let i=0;i<3;i++){gl.bindBuffer(gl.ARRAY_BUFFER,buffers[i]);gl.vertexAttribPointer(attributes[["aPos","aNorm","aCol"][i]],3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(attributes[["aPos","aNorm","aCol"][i]])}
+ gl.drawArrays(gl.TRIANGLES,0,MESHES[id].count);
+}
+const previews={};
+function generatePreviews(){
+ const canvas=$("viewerCanvas");const oldW=canvas.width,oldH=canvas.height;
+ for(let i=0;i<PRODUCTS.length;i++){let item=PRODUCTS[i];render3d(item.id,420,420,-.40+(.22*i),.20,4.65);previews[item.id]=canvas.toDataURL("image/png")}
+ canvas.width=oldW;canvas.height=oldH;
+}
+let selectedFilter="todos",query="",cart={},current=null,lastFocus=null,toastTimeout;
+function showToast(msg){const n=$("toast");n.textContent=msg;n.classList.add("show");clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>n.classList.remove("show"),2100)}
+function cardHTML(p){
+ const src=previews[p.id];
+ return `<article class="product" style="--tone1:${p.tone1};--tone2:${p.tone2}">
+   <div class="product-visual"><span class="corner-tag">✧ ${p.type==="fruta"?"FRUTA":"VERDURA"} · GALAXYM</span>
+    ${src?`<img src="${src}" alt="Modelo 3D low-poly de ${p.name}" loading="lazy">`:`<span style="font-size:75px">${p.type==="fruta"?"🍈":"🌱"}</span>`}
+    <button class="inspect-shortcut" data-inspect="${p.id}">⟳ Examinar 3D</button>
+   </div><div class="product-body"><div class="product-meta"><span>${p.typeLabel}</span><span class="dot"></span><span>${p.origin}</span></div>
+   <h3>${p.name}</h3><p class="product-description">${p.desc}</p>
+   <div class="product-bottom"><span class="price">${p.price} <small>CR / UD.</small></span><button class="add" data-add="${p.id}" aria-label="Añadir ${p.name} a cesta">+</button></div></div></article>`;
+}
+function renderCards(){const items=PRODUCTS.filter(p=>(selectedFilter==="todos"||p.type===selectedFilter)&&[p.name,p.desc,p.origin,p.typeLabel].join(" ").toLocaleLowerCase("es").includes(query));$("grid").innerHTML=items.map(cardHTML).join("");$("emptyResult").classList.toggle("visible",!items.length)}
+function price(n){return `${n} CR`}
+function addCart(id){cart[id]=(cart[id]||0)+1;updateCart();showToast("🌿 Producto añadido a la cesta")}
+function updateCart(){
+ const qty=Object.values(cart).reduce((a,b)=>a+b,0);$("cartCount").textContent=qty;
+ const total=PRODUCTS.reduce((s,p)=>s+(cart[p.id]||0)*p.price,0);$("total").textContent=price(total);$("exportOrder").disabled=!qty;
+ const chosen=PRODUCTS.filter(p=>cart[p.id]>0);
+ $("cartItems").innerHTML=chosen.length?chosen.map(p=>`<div class="cart-line"><div class="cart-mini" style="--tone2:${p.tone2}">${previews[p.id]?`<img src="${previews[p.id]}" alt="">`:"🌱"}</div><div style="flex:1"><div class="cart-name">${p.name}</div><div class="cart-unit">${p.price} CR / unidad · ${p.typeLabel}</div><div class="qty"><button data-dec="${p.id}" aria-label="Restar uno de ${p.name}">−</button><span>${cart[p.id]}</span><button data-inc="${p.id}" aria-label="Sumar uno de ${p.name}">+</button></div></div><strong style="white-space:nowrap;font-size:12px">${p.price*cart[p.id]} CR</strong></div>`).join(""):`<div class="drawer-empty"><span style="display:block;font-size:42px;margin-bottom:18px">🪴</span>Tu cesta está vacía.<br>¿Qué cosecharemos hoy?</div>`;
+}
+function lock(){document.body.classList.toggle("lock",$("inspectOverlay").classList.contains("open")||$("drawer").classList.contains("open"))}
+function openCart(){closeInspect();$("drawer").classList.add("open");$("drawerBackdrop").classList.add("open");$("drawer").setAttribute("aria-hidden","false");lock();$("closeCart").focus()}
+function closeCart(){if(!$("drawer").classList.contains("open"))return;$("drawer").classList.remove("open");$("drawerBackdrop").classList.remove("open");$("drawer").setAttribute("aria-hidden","true");lock();$("openCart").focus()}
+function resizeViewer(){
+ if(!activeId||(!gl&&!ctx2d))return;
+ const stage=$("viewerStage"),scale=Math.min(devicePixelRatio||1,1.7);
+ const w=Math.max(16,Math.floor(stage.clientWidth*scale)),h=Math.max(16,Math.floor(stage.clientHeight*scale));
+ render3d(activeId,w,h,angle,pitch,distance);
+}
+let lastTime=0;
+function viewerLoop(time){if(!activeId)return;const elapsed=time-lastTime;if(elapsed>(gl?27:55)){lastTime=time;if(auto)angle+=Math.min(elapsed,100)*.00027;resizeViewer()}viewerFrame=requestAnimationFrame(viewerLoop)}
+function openInspect(id){
+ const p=PRODUCTS.find(x=>x.id===id);if(!p)return;
+ lastFocus=document.activeElement;closeCart();current=id;activeId=id;angle=.5;pitch=.15;distance=4.6;auto=true;
+ $("viewCategory").textContent=p.typeLabel+" · Colección Galaxym";
+ $("viewName").textContent=p.name;$("viewDescription").textContent=p.detail;
+ $("viewPills").innerHTML=p.tags.map(t=>`<span>✧ ${t}</span>`).join("");
+ $("viewOrigin").textContent=p.origin;$("viewTaste").textContent=p.taste;
+ $("viewPrice").innerHTML=`${p.price} <small>CR / UD.</small>`;
+ $("viewerStage").style.setProperty("--tone1",p.tone1);$("viewerStage").style.setProperty("--tone2",p.tone2);
+ $("inspectOverlay").classList.add("open");lock();cancelAnimationFrame(viewerFrame);viewerFrame=requestAnimationFrame(viewerLoop);$("closeInspect").focus();
+}
+function closeInspect(){if(!$("inspectOverlay").classList.contains("open"))return;$("inspectOverlay").classList.remove("open");activeId=null;current=null;cancelAnimationFrame(viewerFrame);lock();if(lastFocus&&lastFocus.isConnected)lastFocus.focus()}
+function exportOrder(){
+ const items=PRODUCTS.filter(p=>cart[p.id]).map(p=>({productId:p.id,sku:"GX-"+p.id.toUpperCase(),name:p.name,quantity:cart[p.id],unitPrice:p.price,lineTotal:cart[p.id]*p.price}));
+ if(!items.length)return;const stamp=new Date().toISOString();
+ const order={schemaVersion:1,orderId:"GX-DEMO-"+Date.now().toString(36).toUpperCase(),createdAt:stamp,source:"huerto-estelar-html-demo",status:"DRAFT",currency:"CR",items,total:items.reduce((s,i)=>s+i.lineTotal,0),deliveryMissionPreview:{game:"Galaxym",type:"DELIVERY",status:"NOT_CREATED",payload:items.map(i=>({itemId:i.productId,quantity:i.quantity})),note:"Vista previa. El juego y el backend todavía no reciben este pedido."}};
+ const blob=new Blob([JSON.stringify(order,null,2)],{type:"application/json"});const a=document.createElement("a");const href=URL.createObjectURL(blob);a.href=href;a.download=`galaxym-pedido-${order.orderId}.json`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(href),1200);showToast("📦 Pedido JSON exportado (sin enviar)");
+}
+$("grid").addEventListener("click",ev=>{const inspect=ev.target.closest("[data-inspect]"),add=ev.target.closest("[data-add]");if(inspect)openInspect(inspect.dataset.inspect);else if(add)addCart(add.dataset.add)});
+document.querySelectorAll(".filter").forEach(btn=>btn.addEventListener("click",()=>{selectedFilter=btn.dataset.filter;document.querySelectorAll(".filter").forEach(b=>{const a=b===btn;b.classList.toggle("active",a);b.setAttribute("aria-pressed",String(a))});renderCards()}));
+$("search").addEventListener("input",ev=>{query=ev.target.value.trim().toLocaleLowerCase("es");renderCards()});
+$("openCart").addEventListener("click",openCart);$("closeCart").addEventListener("click",closeCart);$("drawerBackdrop").addEventListener("click",closeCart);
+$("closeInspect").addEventListener("click",closeInspect);$("inspectOverlay").addEventListener("click",ev=>{if(ev.target===$("inspectOverlay"))closeInspect()});
+$("viewAdd").addEventListener("click",()=>current&&addCart(current));
+$("drawer").addEventListener("click",ev=>{let dec=ev.target.closest("[data-dec]"),inc=ev.target.closest("[data-inc]");if(dec){cart[dec.dataset.dec]--;if(cart[dec.dataset.dec]<=0)delete cart[dec.dataset.dec];updateCart()}else if(inc){cart[inc.dataset.inc]++;updateCart()}});
+$("exportOrder").addEventListener("click",exportOrder);
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape"){closeInspect();closeCart()}});
+const cv=$("viewerCanvas");
+let pointers=new Map();
+cv.addEventListener("pointerdown",ev=>{cv.setPointerCapture(ev.pointerId);pointers.set(ev.pointerId,[ev.clientX,ev.clientY]);auto=false});
+cv.addEventListener("pointermove",ev=>{if(!pointers.has(ev.pointerId))return;const prev=pointers.get(ev.pointerId);const dx=ev.clientX-prev[0],dy=ev.clientY-prev[1];pointers.set(ev.pointerId,[ev.clientX,ev.clientY]);
+ if(pointers.size===1){angle+=dx*.012;pitch=clamp(pitch+dy*.009,-1.25,1.25)}
+ else if(pointers.size===2){const pts=[...pointers.values()];const d=Math.hypot(pts[0][0]-pts[1][0],pts[0][1]-pts[1][1]);if(pinchDist)distance=clamp(distance+(pinchDist-d)*.009,3.2,8.2);pinchDist=d;}
+});
+function releasePointer(ev){pointers.delete(ev.pointerId);pinchDist=0}
+cv.addEventListener("pointerup",releasePointer);cv.addEventListener("pointercancel",releasePointer);
+cv.addEventListener("wheel",ev=>{ev.preventDefault();auto=false;distance=clamp(distance+ev.deltaY*.006,3.2,8.2)},{passive:false});
+window.addEventListener("resize",()=>activeId&&resizeViewer());
+try{initGL();generatePreviews()}catch(error){console.warn("Se usa renderizado 3D por software:",error.message);ctx2d=$("viewerCanvas").getContext("2d");if(ctx2d)generatePreviews();else $("viewerStage").querySelector(".viewer-guidance").textContent="Visor no disponible en este navegador"}
+renderCards();updateCart();
+</script>
+</body>
+</html>
