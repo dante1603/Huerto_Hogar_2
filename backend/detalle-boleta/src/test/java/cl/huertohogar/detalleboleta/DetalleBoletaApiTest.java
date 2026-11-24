@@ -87,9 +87,10 @@ class DetalleBoletaApiTest {
         Instant ahora = Instant.now();
         var claims = JwtClaimsSet.builder().issuer("huertohogar-usuarios")
             .subject(Long.toString(usuario)).issuedAt(ahora)
-            .expiresAt(ahora.plusSeconds(600)).claim("rol", rol).build();
+            .expiresAt(ahora.plusSeconds(600));
+        if (rol != null) claims.claim("rol", rol);
         return encoder.encode(JwtEncoderParameters.from(
-            JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
+            JwsHeader.with(MacAlgorithm.HS256).build(), claims.build())).getTokenValue();
     }
 
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder generar(
@@ -200,5 +201,10 @@ class DetalleBoletaApiTest {
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$[0].totalVenta").value(200));
         assertEquals(2, repository.count());
+    }
+
+    @Test void jwtFirmadoSinRolNoAutorizaDetalle() throws Exception {
+        mvc.perform(generar(42, null, 9)).andExpect(status().isForbidden());
+        assertEquals(0, repository.count());
     }
 }

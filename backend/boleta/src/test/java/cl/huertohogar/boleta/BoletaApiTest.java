@@ -67,9 +67,10 @@ class BoletaApiTest {
         Instant ahora = Instant.now();
         var claims = JwtClaimsSet.builder().issuer("huertohogar-usuarios")
             .subject(Long.toString(usuario)).issuedAt(ahora)
-            .expiresAt(ahora.plusSeconds(600)).claim("rol", rol).build();
+            .expiresAt(ahora.plusSeconds(600));
+        if (rol != null) claims.claim("rol", rol);
         return encoder.encode(JwtEncoderParameters.from(
-            JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
+            JwsHeader.with(MacAlgorithm.HS256).build(), claims.build())).getTokenValue();
     }
 
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder emitir(
@@ -142,5 +143,10 @@ class BoletaApiTest {
     @Test void openApiDocumentaBoleta() throws Exception {
         mvc.perform(get("/v3/api-docs")).andExpect(status().isOk())
             .andExpect(jsonPath("$.paths['/api/v1/boletas'].post").exists());
+    }
+
+    @Test void jwtFirmadoSinRolNoAutorizaEmision() throws Exception {
+        mvc.perform(emitir(42, null, 1)).andExpect(status().isForbidden());
+        assertEquals(0, repository.count());
     }
 }
