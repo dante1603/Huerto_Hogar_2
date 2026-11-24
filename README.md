@@ -4,7 +4,7 @@ Tienda web académica de productos agrícolas. Implementa catálogo, inventario,
 
 **Alcance vigente (24-11-2026):** cumplir la evaluación EP3 y desplegar el backend en AWS EC2 según la guía del docente. La integración funcional con Galaxym queda fuera del proyecto. El catálogo puede conservar su estética ficticia; no implica pagos, despachos reales ni emisión tributaria.
 
-> **Estado: integración y cierre académico en curso; AWS no acreditado.** Esta rama contiene los cinco backends y MySQL validado en laboratorio. La conmutación completa del frontend a los cinco servicios está en [PR #31](https://github.com/dante1603/Huerto_Hogar_2/pull/31), todavía pendiente de integración. No usar `main` como versión definitiva hasta el cierre de [PR #8](https://github.com/dante1603/Huerto_Hogar_2/pull/8).
+> **Estado: integración y cierre académico en curso; AWS no acreditado.** `main` contiene la base de desarrollo de cinco backends y MySQL validado en laboratorio, incorporada mediante [PR #8](https://github.com/dante1603/Huerto_Hogar_2/pull/8) (merge `4def911`). La conmutación completa del frontend a los cinco servicios sigue en [PR #31](https://github.com/dante1603/Huerto_Hogar_2/pull/31), ahora dirigida a `main`. Esta base no constituye una versión de producción ni una entrega final.
 
 ## 1. Arquitectura
 
@@ -84,12 +84,12 @@ Los HTML, ZIP y prototipos históricos no son la fuente activa del sistema. No i
 - Docker con Compose v2 para MySQL, y Python 3 para las pruebas HTTP.
 - Puertos locales 3306, 5173 y 8080–8084 disponibles.
 
-### Obtener el código de integración
+### Obtener la base de desarrollo
 
 ```bash
 git clone https://github.com/dante1603/Huerto_Hogar_2.git
 cd Huerto_Hogar_2
-git switch integration/fullstack-2026-11-14
+git switch main
 ```
 
 ### MySQL persistente
@@ -150,7 +150,7 @@ npm test
 npm run dev
 ```
 
-Abrir `http://127.0.0.1:5173`. El proxy Vite enruta Catálogo y Usuarios. **En esta rama, Pedidos aún apunta al Catálogo legado**: para probar el flujo React con los cinco servicios independientes, usar el corte de [PR #31](https://github.com/dante1603/Huerto_Hogar_2/pull/31), que incluye `package-lock.json` (usar `npm ci`) y proxy de los cinco servicios. No mezclar comprobantes del nuevo Pedidos con IDs del legado.
+Abrir `http://127.0.0.1:5173`. El proxy Vite enruta Catálogo y Usuarios. **En `main`, Pedidos aún apunta al Catálogo legado**: para probar el flujo React con los cinco servicios independientes, usar el corte de [PR #31](https://github.com/dante1603/Huerto_Hogar_2/pull/31), que incluye `package-lock.json` (usar `npm ci`) y proxy de los cinco servicios. No mezclar comprobantes del nuevo Pedidos con IDs del legado.
 
 ## 5. API REST y Swagger
 
